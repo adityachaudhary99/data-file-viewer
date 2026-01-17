@@ -60,19 +60,24 @@ def convert_to_serializable(obj, max_depth=10, current_depth=0):
         
         # Handle regular arrays
         if obj.size > 1000:
+            preview = obj.flatten()[:100]
+            # Convert each element to handle NaN/Infinity
+            preview_list = [convert_to_serializable(x, max_depth, current_depth + 1) for x in preview]
             return {
                 "_type": "numpy.ndarray",
                 "dtype": str(obj.dtype),
                 "shape": obj.shape,
                 "size": int(obj.size),
-                "preview": obj.flatten()[:100].tolist(),
+                "preview": preview_list,
                 "_note": f"Array truncated. Showing first 100 of {obj.size} elements"
             }
+        # Convert each element to handle NaN/Infinity
+        data_list = [convert_to_serializable(x, max_depth, current_depth + 1) for x in obj.flatten()]
         return {
             "_type": "numpy.ndarray",
             "dtype": str(obj.dtype),
             "shape": obj.shape,
-            "data": obj.tolist()
+            "data": data_list
         }
     
     # Handle datetime
@@ -106,26 +111,30 @@ def convert_to_serializable(obj, max_depth=10, current_depth=0):
     try:
         import pandas as pd
         if isinstance(obj, pd.DataFrame):
+            # Replace NaN with None for JSON compatibility
+            obj_clean = obj.replace({np.nan: None, np.inf: "Infinity", -np.inf: "-Infinity"})
             if len(obj) > 1000:
                 return {
                     "_type": "pandas.DataFrame",
                     "shape": obj.shape,
                     "columns": obj.columns.tolist(),
                     "dtypes": {k: str(v) for k, v in obj.dtypes.items()},
-                    "preview": obj.head(100).to_dict(orient='records'),
+                    "preview": obj_clean.head(100).to_dict(orient='records'),
                     "_note": f"DataFrame truncated. Showing first 100 of {len(obj)} rows"
                 }
             return {
                 "_type": "pandas.DataFrame",
                 "shape": obj.shape,
                 "columns": obj.columns.tolist(),
-                "data": obj.to_dict(orient='records')
+                "data": obj_clean.to_dict(orient='records')
             }
         if isinstance(obj, pd.Series):
+            # Replace NaN with None for JSON compatibility
+            series_clean = obj.replace({np.nan: None, np.inf: "Infinity", -np.inf: "-Infinity"})
             return {
                 "_type": "pandas.Series",
                 "name": obj.name,
-                "data": obj.tolist()
+                "data": series_clean.tolist()
             }
     except ImportError:
         pass
