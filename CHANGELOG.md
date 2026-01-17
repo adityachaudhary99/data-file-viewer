@@ -10,15 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-01-17
 
 ### Added
-- **New File Formats:**
-  - Apache Arrow (.arrow) support
-  - Apache Avro (.avro) support
-  - NetCDF (.nc, .nc4) support
-  - MATLAB (.mat) support
-- **New Features:**
-  - Simplify toggle button - Switch between detailed and clean JSON views
-  - Auto-detection of Python virtual environments (.venv, venv)
-  - Enhanced metadata display for all formats
+- **Isolated Python Environment:**
+  - Extension creates its own private Python virtual environment
+  - One-click package installation (no global Python pollution)
+  - Automatic setup on first use
+  - Cross-session persistence
+- **11 File Format Support:**
+  - Python Pickle (.pkl, .pickle)
+  - HDF5 (.h5, .hdf5)
+  - Apache Parquet (.parquet)
+  - Apache Feather (.feather)
+  - Scikit-learn Joblib (.joblib)
+  - NumPy arrays (.npy, .npz)
+  - MessagePack (.msgpack)
+  - Apache Arrow (.arrow)
+  - Apache Avro (.avro)
+  - NetCDF (.nc, .nc4)
+  - MATLAB (.mat)
+- **Features:**
+  - Simplify JSON toggle - Switch between detailed and clean views
+  - Copy to clipboard functionality
+  - Collapse/expand JSON controls
+  - Complex number support in all formats
+  - Enhanced metadata display
 - Initial release with 11 file format support
 - Support for `.pkl` / `.pickle` (Python Pickle) files
 - Support for `.h5` / `.hdf5` (HDF5) files

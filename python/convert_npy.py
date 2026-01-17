@@ -3,11 +3,32 @@
 
 import sys
 import json
+import math
 import numpy as np
 import os
 
 def convert_array(arr, max_elements=1000):
     """Convert numpy array to JSON-serializable format"""
+    # Handle complex arrays
+    if np.iscomplexobj(arr):
+        if arr.size > max_elements:
+            preview = arr.flatten()[:max_elements]
+            return {
+                "_type": "numpy.ndarray",
+                "dtype": str(arr.dtype),
+                "shape": arr.shape,
+                "size": int(arr.size),
+                "preview": [{"real": float(x.real), "imag": float(x.imag)} for x in preview],
+                "_note": f"Complex array truncated. Showing first {max_elements} of {arr.size} elements"
+            }
+        return {
+            "_type": "numpy.ndarray",
+            "dtype": str(arr.dtype),
+            "shape": arr.shape,
+            "data": [{"real": float(x.real), "imag": float(x.imag)} for x in arr.flatten()]
+        }
+    
+    # Handle regular arrays
     if arr.size > max_elements:
         return {
             "_type": "numpy.ndarray",

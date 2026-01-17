@@ -38,6 +38,16 @@ export abstract class BaseEditorProvider implements vscode.CustomReadonlyEditorP
 
         webviewPanel.webview.html = this.getLoadingHtml();
 
+        // Don't wrap in try-catch yet - let package check happen first
+        const packagesInstalled = await PythonRunner.checkAndInstallPackages();
+        if (!packagesInstalled) {
+            webviewPanel.webview.html = this.getErrorHtml(
+                'Python packages are required. Please install them:\n\n' +
+                'pip install numpy pandas h5py pyarrow msgpack joblib avro-python3 netCDF4 scipy'
+            );
+            return;
+        }
+
         try {
             const jsonData = await this.convertToJson(document.uri);
             webviewPanel.webview.html = this.getWebviewContent(jsonData, document.uri);

@@ -37,16 +37,23 @@ Simply click on any supported file in your workspace. The extension will automat
 
 ## Requirements
 
-This extension uses Python to read data files. Make sure you have:
-- Python 3.7 or higher installed
-- Required Python packages: `numpy`, `pandas`, `h5py`, `pyarrow`, `msgpack`, `joblib`, `avro-python3`, `netCDF4`, `scipy`
+**Python 3.7 or higher** must be installed on your system.
 
-Install all at once:
-```bash
-pip install numpy pandas h5py pyarrow msgpack joblib avro-python3 netCDF4 scipy
-```
+### First-Time Setup
 
-The extension will automatically detect your Python installation.
+When you first open a data file, the extension will:
+1. **Automatically create** its own isolated Python environment
+2. **Ask permission** to install required packages (one-time setup)
+3. **Install packages** in its own environment (doesn't affect your global Python!)
+
+**That's it!** The setup takes ~2-3 minutes the first time, then works forever.
+
+### Why This Approach?
+
+- ✅ **Isolated**: Doesn't pollute your global Python packages
+- ✅ **Persistent**: Packages installed once, work everywhere
+- ✅ **Clean**: Uninstall the extension = removes everything
+- ✅ **No conflicts**: Won't interfere with your projects
 
 ## Extension Settings
 

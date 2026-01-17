@@ -3,6 +3,7 @@
 
 import sys
 import json
+import math
 import h5py
 import numpy as np
 
@@ -12,6 +13,26 @@ def convert_dataset(dataset, max_elements=1000):
     
     # Handle numpy arrays
     if isinstance(data, np.ndarray):
+        # Handle complex arrays
+        if np.iscomplexobj(data):
+            if data.size > max_elements:
+                preview = data.flatten()[:max_elements]
+                return {
+                    "_type": "hdf5.dataset",
+                    "dtype": str(data.dtype),
+                    "shape": data.shape,
+                    "size": int(data.size),
+                    "preview": [{"real": float(x.real), "imag": float(x.imag)} for x in preview],
+                    "_note": f"Complex dataset truncated. Showing first {max_elements} of {data.size} elements"
+                }
+            return {
+                "_type": "hdf5.dataset",
+                "dtype": str(data.dtype),
+                "shape": data.shape,
+                "data": [{"real": float(x.real), "imag": float(x.imag)} for x in data.flatten()]
+            }
+        
+        # Handle regular arrays
         if data.size > max_elements:
             return {
                 "_type": "hdf5.dataset",

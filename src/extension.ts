@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { PythonRunner } from './utils/PythonRunner';
 import { PklEditorProvider } from './providers/PklEditorProvider';
 import { H5EditorProvider } from './providers/H5EditorProvider';
 import { ParquetEditorProvider } from './providers/ParquetEditorProvider';
@@ -13,6 +14,9 @@ import { MatEditorProvider } from './providers/MatEditorProvider';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Data File Viewer extension is now active');
+
+    // Initialize PythonRunner with extension context
+    PythonRunner.initialize(context);
 
     // Register all custom editor providers
     context.subscriptions.push(

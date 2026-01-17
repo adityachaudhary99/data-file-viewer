@@ -19,16 +19,17 @@ def main():
         with open(file_path, 'rb') as f:
             reader = DataFileReader(f, DatumReader())
             
-            # Get schema
-            schema = json.loads(str(reader.schema))
+            # Get schema (use get_meta method)
+            schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
             
             # Read records
+            total_records = 0
             for i, record in enumerate(reader):
                 if i >= 1000:  # Limit to 1000 records
                     break
                 records.append(record)
+                total_records = i + 1
             
-            total_records = i + 1
             reader.close()
         
         result = {

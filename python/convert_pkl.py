@@ -4,6 +4,7 @@
 import sys
 import json
 import pickle
+import math
 import numpy as np
 from datetime import datetime, date
 
@@ -18,15 +19,54 @@ def convert_to_serializable(obj, max_depth=10, current_depth=0):
         return None
     
     # Handle basic types
-    if isinstance(obj, (bool, int, float, str)):
+    if isinstance(obj, (bool, int, str)):
+        return obj
+    
+    # Handle float with NaN/Infinity
+    if isinstance(obj, float):
+        if math.isnan(obj):
+            return None  # Convert NaN to null
+        elif math.isinf(obj):
+            return "Infinity" if obj > 0 else "-Infinity"
         return obj
     
     # Handle numpy types
     if isinstance(obj, np.integer):
         return int(obj)
     if isinstance(obj, np.floating):
-        return float(obj)
+        val = float(obj)
+        if math.isnan(val):
+            return None  # Convert NaN to null
+        elif math.isinf(val):
+            return "Infinity" if val > 0 else "-Infinity"
+        return val
+    if isinstance(obj, (complex, np.complexfloating)):
+        return {
+            "_type": "complex",
+            "real": float(obj.real),
+            "imag": float(obj.imag)
+        }
     if isinstance(obj, np.ndarray):
+        # Handle complex arrays
+        if np.iscomplexobj(obj):
+            if obj.size > 1000:
+                preview = obj.flatten()[:100]
+                return {
+                    "_type": "numpy.ndarray",
+                    "dtype": str(obj.dtype),
+                    "shape": obj.shape,
+                    "size": int(obj.size),
+                    "preview": [{"real": float(x.real), "imag": float(x.imag)} for x in preview],
+                    "_note": f"Complex array truncated. Showing first 100 of {obj.size} elements"
+                }
+            return {
+                "_type": "numpy.ndarray",
+                "dtype": str(obj.dtype),
+                "shape": obj.shape,
+                "data": [{"real": float(x.real), "imag": float(x.imag)} for x in obj.flatten()]
+            }
+        
+        # Handle regular arrays
         if obj.size > 1000:
             return {
                 "_type": "numpy.ndarray",
