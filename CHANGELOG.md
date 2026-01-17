@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-01-17
+
+### Fixed
+- Fixed NaN/Infinity serialization errors in pickle and joblib converters
+- Fixed pandas DataFrame NaN values causing JSON parsing errors
+- Fixed Avro file reading with Snappy compression support
+- Fixed GitHub Actions workflow for automated releases
+- Improved error handling for missing Python packages
+
+### Changed
+- Updated to use Node.js 20 in GitHub Actions workflows
+- Improved Python package installation flow
+
 ## [1.0.0] - 2026-01-17
 
 ### Added
