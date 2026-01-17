@@ -16,6 +16,8 @@ export class PythonRunner {
         this.extensionContext = context;
         // Load cached package installation status from persistent storage
         this.packagesInstalled = context.globalState.get('packagesInstalled', null);
+        console.log('PythonRunner initialized. Packages installed:', this.packagesInstalled);
+        console.log('Global storage path:', context.globalStorageUri.fsPath);
     }
 
     private static getVenvPath(): string {
@@ -53,7 +55,7 @@ export class PythonRunner {
         throw new Error('Python 3 not found. Please install Python 3.7 or higher.');
     }
 
-    static async ensureVenv(): Promise<string> {
+    static async ensureVenv(progressCallback?: (message: string) => void): Promise<string> {
         const venvPath = this.getVenvPath();
         const venvPython = this.getVenvPythonPath();
 
@@ -73,24 +75,35 @@ export class PythonRunner {
         const systemPython = await this.findSystemPython();
         
         // Ensure parent directory exists
-        if (!fs.existsSync(path.dirname(venvPath))) {
-            fs.mkdirSync(path.dirname(venvPath), { recursive: true });
+        const parentDir = path.dirname(venvPath);
+        if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true });
         }
 
         // Create virtual environment
-        await vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: 'Creating Python environment for Data File Viewer...',
-            cancellable: false
-        }, async () => {
+        const createVenv = async () => {
             try {
+                if (progressCallback) {
+                    progressCallback('Creating virtual environment...');
+                }
                 await execAsync(`${systemPython} -m venv "${venvPath}"`, {
                     timeout: 60000 // 1 minute
                 });
             } catch (error) {
                 throw new Error(`Failed to create virtual environment: ${error}`);
             }
-        });
+        };
+
+        // Only show progress notification if not already in a progress context
+        if (progressCallback) {
+            await createVenv();
+        } else {
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Creating Python environment for Data File Viewer...',
+                cancellable: false
+            }, createVenv);
+        }
 
         this.pythonPath = venvPython;
         return venvPython;
@@ -108,52 +121,102 @@ export class PythonRunner {
 
     static async checkAndInstallPackages(): Promise<boolean> {
         try {
-            // Return cached result if we already checked
-            if (this.packagesInstalled !== null) {
-                return this.packagesInstalled;
+            console.log('checkAndInstallPackages called. Cached status:', this.packagesInstalled);
+            
+            // Don't use cached result - always check if venv and packages exist
+            // The cache might be stale if venv was deleted or packages removed
+            // Only trust cache if venv actually exists and is valid
+            
+            // First, ensure we can find system Python (needed for venv creation)
+            let systemPython: string;
+            try {
+                systemPython = await this.findSystemPython();
+                console.log('System Python found:', systemPython);
+            } catch (error) {
+                console.error('System Python not found:', error);
+                vscode.window.showErrorMessage(
+                    'Python 3 not found. Please install Python 3.7 or higher and restart VS Code.'
+                );
+                this.packagesInstalled = false;
+                await this.extensionContext?.globalState.update('packagesInstalled', false);
+                return false;
             }
 
-            // Ensure venv exists first
-            const python = await this.findPython();
+            // Check if venv exists and is valid
+            const venvPath = this.getVenvPath();
+            const venvPython = this.getVenvPythonPath();
+            console.log('Checking venv at:', venvPython);
             
-            // Check if packages are installed in the venv
-            const checkScript = 'import sys; import numpy, pandas, h5py, pyarrow, msgpack, joblib, avro, snappy, netCDF4, scipy; print("OK")';
+            let python: string | null = null;
+            let packagesOk = false;
             
-            try {
-                const { stdout } = await execAsync(`"${python}" -c "${checkScript}"`, {
-                    timeout: 10000
-                });
-                
-                if (stdout.includes('OK')) {
-                    this.packagesInstalled = true;
-                    // Persist to storage for cross-session
-                    await this.extensionContext?.globalState.update('packagesInstalled', true);
-                    return true;
+            if (fs.existsSync(venvPython)) {
+                console.log('Venv exists, checking if valid...');
+                try {
+                    await execAsync(`"${venvPython}" --version`);
+                    python = venvPython;
+                    console.log('Venv is valid');
+                    
+                    // Check if packages are installed
+                    const checkScript = 'import sys; import numpy, pandas, h5py, pyarrow, msgpack, joblib, avro, snappy, netCDF4, scipy; print("OK")';
+                    try {
+                        const { stdout } = await execAsync(`"${python}" -c "${checkScript}"`, {
+                            timeout: 10000
+                        });
+                        
+                        if (stdout.includes('OK')) {
+                            packagesOk = true;
+                            console.log('All packages are installed');
+                        } else {
+                            console.log('Package check returned unexpected output:', stdout);
+                        }
+                    } catch (checkError) {
+                        console.log('Package check failed:', checkError);
+                    }
+                } catch (error) {
+                    console.log('Venv exists but is invalid, will recreate:', error);
                 }
-            } catch (checkError) {
-                // Packages are missing, continue to offer installation
-                console.log('Package check failed:', checkError);
+            } else {
+                console.log('Venv does not exist yet');
             }
             
-            // Packages missing, offer to install
+            // If packages are OK, cache and return
+            if (packagesOk && python) {
+                this.packagesInstalled = true;
+                this.pythonPath = python;
+                await this.extensionContext?.globalState.update('packagesInstalled', true);
+                return true;
+            }
+            
+            // Packages missing or venv doesn't exist, offer to install
+            console.log('Showing installation popup...');
             const install = await vscode.window.showWarningMessage(
                 'Data File Viewer needs to install Python packages in its own environment. This is a one-time setup.',
                 'Install',
                 'Cancel'
             );
             
+            console.log('User response:', install);
+            
             if (install === 'Install') {
                 const success = await vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,
-                    title: 'Installing Python packages (this may take a few minutes)...',
+                    title: 'Setting up Python environment (this may take a few minutes)...',
                     cancellable: false
                 }, async (progress) => {
                     try {
+                        // Ensure venv exists (create if needed)
+                        if (!python || !fs.existsSync(python)) {
+                            python = await this.ensureVenv((msg) => progress.report({ increment: 10, message: msg }));
+                        }
+                        
+                        progress.report({ increment: 20, message: 'Upgrading pip...' });
                         // Upgrade pip first
                         await execAsync(`"${python}" -m pip install --upgrade pip`, {
                             timeout: 60000
                         });
                         
+                        progress.report({ increment: 30, message: 'Installing packages...' });
                         // Install packages
                         await execAsync(`"${python}" -m pip install numpy pandas h5py pyarrow msgpack joblib avro-python3 python-snappy netCDF4 scipy`, {
                             timeout: 300000 // 5 minutes for installation
@@ -163,6 +226,7 @@ export class PythonRunner {
                         this.packagesInstalled = true;
                         // Persist to storage for cross-session
                         await this.extensionContext?.globalState.update('packagesInstalled', true);
+                        this.pythonPath = python; // Cache the path
                         return true;
                     } catch (error) {
                         vscode.window.showErrorMessage(`Failed to install packages: ${error}`);
@@ -176,6 +240,7 @@ export class PythonRunner {
             return false; // User clicked Cancel
         } catch (error) {
             vscode.window.showErrorMessage(`Error setting up Python environment: ${error}`);
+            this.packagesInstalled = false;
             return false;
         }
     }

@@ -2,7 +2,7 @@
   "name": "data-file-viewer",
   "displayName": "Data File Viewer",
   "description": "View and explore binary data files (.pkl, .h5, .parquet, .feather, .joblib, .npy, .npz, .msgpack, .arrow, .avro, .nc, .mat)",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "thecalendre",
   "icon": "icon.png",
   "engines": {
@@ -36,6 +36,7 @@
   ],
   "activationEvents": [
     "onCustomEditor:dataFileViewer.pkl",
+    "onCustomEditor:dataFileViewer.pickle",
     "onCustomEditor:dataFileViewer.h5",
     "onCustomEditor:dataFileViewer.hdf5",
     "onCustomEditor:dataFileViewer.parquet",
@@ -47,6 +48,8 @@
     "onCustomEditor:dataFileViewer.arrow",
     "onCustomEditor:dataFileViewer.avro",
     "onCustomEditor:dataFileViewer.netcdf",
+    "onCustomEditor:dataFileViewer.nc4",
+    "onCustomEditor:dataFileViewer.nc",
     "onCustomEditor:dataFileViewer.mat"
   ],
   "main": "./dist/extension.js",
