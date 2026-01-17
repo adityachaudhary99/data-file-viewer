@@ -43,6 +43,6 @@ jobs:
           generate_release_notes: true
       
       - name: Publish to Open VSX
-        if: success() && secrets.OVSX_TOKEN != ''
+        if: success()
         continue-on-error: true
         run: npx ovsx publish data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix -p ${{ secrets.OVSX_TOKEN }}
