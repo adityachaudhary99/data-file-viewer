@@ -1,0 +1,12 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+test-data/
+.DS_Store
+.venv/
+venv/
+*.pyc
+__pycache__/
+.env

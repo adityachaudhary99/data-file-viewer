@@ -1,0 +1,213 @@
+{
+  "name": "data-file-viewer",
+  "displayName": "Data File Viewer",
+  "description": "View and explore binary data files (.pkl, .h5, .parquet, .feather, .joblib, .npy, .npz, .msgpack, .arrow, .avro, .nc, .mat)",
+  "version": "1.0.0",
+  "publisher": "thecalendre",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "File Viewer",
+    "Data Viewer",
+    "Binary Data Viewer",
+    "Data File Viewer",
+    "Data File Explorer",
+    "Data Science",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "pickle",
+    "hdf5",
+    "parquet",
+    "numpy",
+    "arrow",
+    "avro",
+    "netcdf",
+    "matlab",
+    "data science",
+    "ml",
+    "machine learning",
+    "data science",
+    "data visualization",
+    "file viewer"
+  ],
+  "activationEvents": [
+    "onCustomEditor:dataFileViewer.pkl",
+    "onCustomEditor:dataFileViewer.h5",
+    "onCustomEditor:dataFileViewer.hdf5",
+    "onCustomEditor:dataFileViewer.parquet",
+    "onCustomEditor:dataFileViewer.feather",
+    "onCustomEditor:dataFileViewer.joblib",
+    "onCustomEditor:dataFileViewer.npy",
+    "onCustomEditor:dataFileViewer.npz",
+    "onCustomEditor:dataFileViewer.msgpack",
+    "onCustomEditor:dataFileViewer.arrow",
+    "onCustomEditor:dataFileViewer.avro",
+    "onCustomEditor:dataFileViewer.netcdf",
+    "onCustomEditor:dataFileViewer.mat"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "dataFileViewer.pkl",
+        "displayName": "Pickle Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.pkl"
+          },
+          {
+            "filenamePattern": "*.pickle"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.h5",
+        "displayName": "HDF5 Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.h5"
+          },
+          {
+            "filenamePattern": "*.hdf5"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.parquet",
+        "displayName": "Parquet Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.parquet"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.feather",
+        "displayName": "Feather Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.feather"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.joblib",
+        "displayName": "Joblib Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.joblib"
+          },
+          {
+            "filenamePattern": "*.jl"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.npy",
+        "displayName": "NumPy Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.npy"
+          },
+          {
+            "filenamePattern": "*.npz"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.msgpack",
+        "displayName": "MessagePack Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.msgpack"
+          },
+          {
+            "filenamePattern": "*.mp"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.arrow",
+        "displayName": "Apache Arrow Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.arrow"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.avro",
+        "displayName": "Apache Avro Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.avro"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.netcdf",
+        "displayName": "NetCDF Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.nc"
+          },
+          {
+            "filenamePattern": "*.nc4"
+          },
+          {
+            "filenamePattern": "*.netcdf"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dataFileViewer.mat",
+        "displayName": "MATLAB Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.mat"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "@types/node": "^18.x",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.80.0",
+    "webpack-cli": "^5.0.0",
+    "ts-loader": "^9.4.0"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adityachaudhary99/data-file-viewer"
+  },
+  "license": "MIT"
+}
