@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-01-17
+
+### Fixed
+- Fixed one-time setup popup appearing repeatedly on every file open
+- Fixed package installation verification failing on Windows due to quote escaping
+- Improved package installation flow to trust cache when venv exists
+
 ## [1.0.1] - 2026-01-17
 
 ### Fixed

@@ -2,7 +2,7 @@
   "name": "data-file-viewer",
   "displayName": "Data File Viewer",
   "description": "View and explore binary data files (.pkl, .h5, .parquet, .feather, .joblib, .npy, .npz, .msgpack, .arrow, .avro, .nc, .mat)",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "thecalendre",
   "icon": "icon.png",
   "engines": {
