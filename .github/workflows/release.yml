@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create releases
     
     steps:
       - name: Checkout code
@@ -40,7 +42,7 @@ jobs:
           files: data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix
           generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN  }}
       
       - name: Publish to Open VSX
         if: success()
