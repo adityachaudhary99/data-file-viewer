@@ -30,25 +30,25 @@ jobs:
         run: npm run compile
       
       - name: Package extension
-        run: vsce package
+        run: vsce package --out data-file-viewer.vsix
       
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Publish to Visual Studio Marketplace
-        if: success()
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: vsce publish --packagePath data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix
+      # - name: Publish to Visual Studio Marketplace
+      #   if: success()
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      #   run: vsce publish --packagePath data-file-viewer.vsix
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix
+          files: data-file-viewer.vsix
           generate_release_notes: true
       
       - name: Publish to Open VSX
         if: success()
         continue-on-error: true
-        run: npx ovsx publish data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix -p ${{ secrets.OVSX_TOKEN }}
+        run: npx ovsx publish data-file-viewer.vsix -p ${{ secrets.OVSX_TOKEN }}

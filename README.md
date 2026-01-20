@@ -1,6 +1,6 @@
 # Data File Viewer
 
-View and explore binary data files directly in VS Code and Cursor IDE.
+View and explore binary data files directly in VS Code (and compatible editors like Cursor).
 
 ## Supported File Types
 
@@ -64,56 +64,22 @@ Currently, this extension works out of the box with no configuration needed.
 - Very large files (>1GB) may take time to load
 - Some custom pickle objects may not serialize to JSON properly
 
-## Release Notes
+## Release notes are in [CHANGELOG.md](CHANGELOG.md)
 
-### 1.0.0
-
-Comprehensive first release with support for 11 file formats:
-- Pickle files (.pkl, .pickle)
-- HDF5 files (.h5, .hdf5)
-- Apache Parquet files (.parquet)
-- Apache Feather files (.feather)
-- Joblib files (.joblib)
-- NumPy files (.npy, .npz)
-- MessagePack files (.msgpack)
-- Apache Arrow files (.arrow)
-- Apache Avro files (.avro)
-- NetCDF files (.nc, .nc4)
-- MATLAB files (.mat)
-
-Features:
-- JSON conversion with syntax highlighting
-- Simplify toggle for cleaner views
-- Copy to clipboard
-- Collapse/Expand controls
-- Smart truncation for large files
-- Metadata display
-- Auto-detection of Python virtual environments
-
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 Found a bug or have a feature request? Please open an issue on [GitHub](https://github.com/adityachaudhary99/data-file-viewer).
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- Built for the Cursor IDE community
-- Inspired by the need for better data file viewing in Open VSX
-- Thanks to all the open-source Python libraries that make this possible
-
-## ⭐ Support
+## Support
 
 If you find this extension useful, please:
-- ⭐ Star the repository on GitHub
-- 📝 Leave a review on Open VSX
-- 🐛 Report bugs or suggest features
-- 🤝 Contribute code or documentation
-
----
-
-Made with ❤️ for data scientists and ML engineers
+- Star the repository on GitHub
+- Leave a review on the VS Code Marketplace and Open VSX
+- Report bugs or suggest features
+- Contribute code or documentation
