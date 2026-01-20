@@ -35,6 +35,12 @@ jobs:
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Publish to Visual Studio Marketplace
+        if: success()
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: vsce publish --packagePath data-file-viewer-${{ steps.get_version.outputs.VERSION }}.vsix
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

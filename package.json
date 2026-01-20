@@ -9,12 +9,8 @@
     "vscode": "^1.75.0"
   },
   "categories": [
-    "File Viewer",
-    "Data Viewer",
-    "Binary Data Viewer",
-    "Data File Viewer",
-    "Data File Explorer",
     "Data Science",
+    "Machine Learning",
     "Visualization",
     "Other"
   ],
