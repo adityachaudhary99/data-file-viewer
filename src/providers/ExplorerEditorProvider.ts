@@ -62,7 +62,8 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
       }
     });
 
-    panel.onDidDispose(() => { sub.dispose(); session.dispose(); });
+    const panelDisposable = panel.onDidDispose(() => { sub.dispose(); session.dispose(); });
+    this.context.subscriptions.push(panelDisposable, { dispose: () => session.dispose() });
   }
 }
 
