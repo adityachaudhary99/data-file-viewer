@@ -41,6 +41,15 @@ test('handles two replies arriving in one chunk, out of order', async () => {
   assert.equal(await p2, 'B');
 });
 
+test('args cannot override protocol id field', async () => {
+  const { toServer, rpc } = harness();
+  // Caller supplies id:999 in args — protocol id must still be the real incrementing id (1).
+  const _p = rpc.request('x', { id: 999 });
+  const written = JSON.parse((await once(toServer)).toString());
+  assert.equal(written.id, 1, 'protocol id must be the real incrementing id, not the arg override');
+  assert.equal(written.cmd, 'x');
+});
+
 function once(stream: PassThrough): Promise<Buffer> {
   return new Promise((res) => stream.once('data', res));
 }

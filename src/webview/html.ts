@@ -48,6 +48,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
   </div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    const fileName = ${JSON.stringify(fileName)};
     let columns = [], sortBy = null, sortDir = null, selected = null;
     const $ = (id) => document.getElementById(id);
 
@@ -119,7 +120,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       if (m.type === 'open') {
         columns = m.result.columns;
         sortBy = null; sortDir = null; selected = null;
-        $('status').textContent = '${escapeHtml(fileName)} — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
+        $('status').textContent = fileName + ' — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
         $('sampleNote').textContent = m.result.sampled ? 'Showing a sample of the file.' : '';
         renderNav(); renderSchema(); send('page', { offset: 0, limit: 200, sortBy: null, sortDir: null });
       } else if (m.type === 'page') { renderTable(m.result.rows); }

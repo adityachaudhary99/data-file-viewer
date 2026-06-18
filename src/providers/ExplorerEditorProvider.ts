@@ -40,11 +40,6 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
     }
 
     const nonce = String(Date.now()) + Math.random().toString(36).slice(2);
-    panel.webview.html = getExplorerHtml({
-      fileName: path.basename(document.uri.fsPath),
-      cspSource: panel.webview.cspSource,
-      nonce,
-    });
 
     const sub = panel.webview.onDidReceiveMessage(async (msg) => {
       try {
@@ -62,8 +57,13 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
       }
     });
 
-    const panelDisposable = panel.onDidDispose(() => { sub.dispose(); session.dispose(); });
-    this.context.subscriptions.push(panelDisposable, { dispose: () => session.dispose() });
+    panel.webview.html = getExplorerHtml({
+      fileName: path.basename(document.uri.fsPath),
+      cspSource: panel.webview.cspSource,
+      nonce,
+    });
+
+    panel.onDidDispose(() => { sub.dispose(); session.dispose(); });
   }
 }
 

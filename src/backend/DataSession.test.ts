@@ -44,3 +44,8 @@ test('dispose() is idempotent (safe to call twice)', () => {
   s.dispose();
   s.dispose(); // must not throw
 });
+
+test('spawn failure rejects pending requests', async () => {
+  const s = DataSession.fromChild(spawn('definitely_nonexistent_binary_xyzzy', [], { stdio: 'pipe' }));
+  await assert.rejects(s.open());
+});

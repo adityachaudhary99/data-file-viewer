@@ -22,6 +22,12 @@ export class DataSession {
     const session = new DataSession(child, rpc);
     // Defensive: if child exits unexpectedly, reject all in-flight requests instead of hanging.
     child.on('exit', () => rpc.dispose());
+    // Drain stderr so the OS pipe buffer can't fill up and deadlock the child.
+    child.stderr.on('data', () => {});
+    // Reject pending requests if the process fails to spawn or errors.
+    child.on('error', () => rpc.dispose());
+    // Swallow write-after-close errors on stdin.
+    child.stdin.on('error', () => {});
     return session;
   }
 

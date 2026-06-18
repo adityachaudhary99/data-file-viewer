@@ -17,7 +17,7 @@ export class JsonLineRpc {
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
-      this.writable.write(JSON.stringify({ id, cmd, ...args }) + '\n');
+      this.writable.write(JSON.stringify({ ...args, id, cmd }) + '\n');
     });
   }
 
