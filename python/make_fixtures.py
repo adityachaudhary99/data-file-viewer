@@ -24,6 +24,17 @@ def main() -> None:
     df.to_parquet(os.path.join(FIXTURE_DIR, "sample.parquet"), index=False)
     print("wrote sample.parquet")
 
+    import pyarrow as pa
+    import pyarrow.feather as feather
+    import pyarrow.ipc as ipc
+
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    feather.write_feather(table, os.path.join(FIXTURE_DIR, "sample.feather"))
+    with pa.OSFile(os.path.join(FIXTURE_DIR, "sample.arrow"), "wb") as sink:
+        with ipc.new_file(sink, table.schema) as writer:
+            writer.write_table(table)
+    print("wrote sample.feather and sample.arrow")
+
 
 if __name__ == "__main__":
     main()
