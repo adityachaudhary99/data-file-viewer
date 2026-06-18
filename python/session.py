@@ -42,7 +42,10 @@ class Session:
             df = self.table.df.head(RAW_LIMIT)
             data = [{k: to_jsonable(v) for k, v in rec.items()}
                     for rec in df.to_dict(orient="records")]
-            return {"json": {"file_type": os.path.splitext(self.path)[1].lstrip("."), "rows": self.table.total,
+            return {"json": {"file_type": os.path.splitext(self.path)[1].lstrip("."),
+                             "rows": self.table.total,
+                             "shown": len(data),
+                             "truncated": self.table.total > len(data),
                              "columns": [c["name"] for c in columns_meta(self.table.df)],
                              "data": data}}
         raise ValueError(f"unknown command: {cmd!r}")

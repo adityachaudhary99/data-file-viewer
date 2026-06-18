@@ -53,3 +53,11 @@ def test_malformed_json_line_does_not_crash():
     replies = [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
     by_id = {r.get("id"): r for r in replies}
     assert by_id[5]["ok"] is True  # valid request after the bad line still works
+
+
+def test_rawjson_reports_truncation_keys():
+    [reply] = _run([{"id": 1, "cmd": "rawJson"}])
+    j = reply["result"]["json"]
+    assert j["shown"] == 10
+    assert j["truncated"] is False
+    assert len(j["data"]) == 10
