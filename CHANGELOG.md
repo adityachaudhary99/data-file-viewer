@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Interactive explorer for `.parquet`: sortable/paginated table, per-column
+  profiler (type, null %, distribution histogram, top-k, quality flags),
+  Schema tab, and a backward-compatible Raw (JSON) tab. (Plan 1 of the v2
+  explorer; other formats/shapes follow.)
+
 ## [1.0.3] - 2026-01-17
 
 ### Fixed
