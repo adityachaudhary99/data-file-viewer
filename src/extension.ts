@@ -3,11 +3,9 @@ import { PythonEnv } from './backend/PythonEnv';
 import { PklEditorProvider } from './providers/PklEditorProvider';
 import { H5EditorProvider } from './providers/H5EditorProvider';
 import { ExplorerEditorProvider } from './providers/ExplorerEditorProvider';
-import { FeatherEditorProvider } from './providers/FeatherEditorProvider';
 import { JoblibEditorProvider } from './providers/JoblibEditorProvider';
 import { NpyEditorProvider } from './providers/NpyEditorProvider';
 import { MsgpackEditorProvider } from './providers/MsgpackEditorProvider';
-import { ArrowEditorProvider } from './providers/ArrowEditorProvider';
 import { AvroEditorProvider } from './providers/AvroEditorProvider';
 import { NetCDFEditorProvider } from './providers/NetCDFEditorProvider';
 import { MatEditorProvider } from './providers/MatEditorProvider';
@@ -23,11 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
         PklEditorProvider.register(context),
         H5EditorProvider.register(context),
         ExplorerEditorProvider.register(context),
-        FeatherEditorProvider.register(context),
+        ExplorerEditorProvider.register(context, 'dataFileViewer.feather'),
+        ExplorerEditorProvider.register(context, 'dataFileViewer.arrow'),
         JoblibEditorProvider.register(context),
         NpyEditorProvider.register(context),
         MsgpackEditorProvider.register(context),
-        ArrowEditorProvider.register(context),
         AvroEditorProvider.register(context),
         NetCDFEditorProvider.register(context),
         MatEditorProvider.register(context)

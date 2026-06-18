@@ -8,9 +8,9 @@ import { getExplorerHtml } from '../webview/html';
 export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = 'dataFileViewer.parquet';
 
-  public static register(context: vscode.ExtensionContext): vscode.Disposable {
+  public static register(context: vscode.ExtensionContext, viewType: string = ExplorerEditorProvider.viewType): vscode.Disposable {
     return vscode.window.registerCustomEditorProvider(
-      ExplorerEditorProvider.viewType,
+      viewType,
       new ExplorerEditorProvider(context),
       { webviewOptions: { retainContextWhenHidden: true }, supportsMultipleEditorsPerDocument: false },
     );
