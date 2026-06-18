@@ -1,7 +1,6 @@
 # python/make_fixtures.py
 """Generate small, deterministic test fixtures. Run: python python/make_fixtures.py"""
 import os
-import numpy as np
 import pandas as pd
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "..", "tests", "fixtures")
