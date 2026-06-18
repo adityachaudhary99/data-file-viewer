@@ -23,3 +23,16 @@ def test_columns_meta_shape():
     meta = columns_meta(t.df)
     assert {"name": "id", "dtype": meta[0]["dtype"]} == meta[0]
     assert [c["name"] for c in meta] == ["id", "price", "region", "active"]
+
+
+import pytest
+
+
+@pytest.mark.parametrize("fixture", ["sample.feather", "sample.arrow"])
+def test_load_tabular_reads_feather_and_arrow(fixture):
+    import os
+    path = os.path.join(os.path.dirname(__file__), "fixtures", fixture)
+    t = load_tabular(path)
+    assert t.total == 10
+    assert t.sampled is False
+    assert [c["name"] for c in columns_meta(t.df)] == ["id", "price", "region", "active"]

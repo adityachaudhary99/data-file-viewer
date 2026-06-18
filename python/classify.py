@@ -7,6 +7,8 @@ class UnsupportedFile(Exception):
 
 _EXT_TO_KIND = {
     ".parquet": "tabular",
+    ".feather": "tabular",
+    ".arrow": "tabular",
 }
 
 
