@@ -1,5 +1,4 @@
 import os
-import math
 from python.loaders.tabular import load_tabular
 from python.paging import page
 
