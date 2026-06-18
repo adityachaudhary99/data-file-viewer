@@ -90,7 +90,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     }
     function renderInspector(p) {
       let html = '<h3>' + esc(p.column || selected || '') + '</h3>';
-      html += '<div class="note">' + esc(p.dtype) + ' · ' + p.kind + '</div>';
+      html += '<div class="note">' + esc(p.dtype) + ' · ' + esc(p.kind) + '</div>';
       for (const f of ['highNull','constant','highCardinality'])
         if (p.flags && p.flags[f]) html += '<span class="badge">' + f + '</span>';
       html += '<p>nulls: ' + p.nulls + ' (' + (p.nullPct*100).toFixed(1) + '%)<br>unique: ' + p.unique + '</p>';
@@ -112,12 +112,13 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       return '<div class="hist">' + counts.map((c) => '<i style="height:' + Math.round(c/max*60) + 'px"></i>').join('') + '</div>';
     }
     function fmt(v){ if(v===null||v===undefined||Number.isNaN(v))return '—'; return Number.isInteger(v)?String(v):Number(v.toPrecision(4)).toString(); }
-    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     window.addEventListener('message', (e) => {
       const m = e.data;
       if (m.type === 'open') {
         columns = m.result.columns;
+        sortBy = null; sortDir = null; selected = null;
         $('status').textContent = '${escapeHtml(fileName)} — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
         $('sampleNote').textContent = m.result.sampled ? 'Showing a sample of the file.' : '';
         renderNav(); renderSchema(); send('page', { offset: 0, limit: 200, sortBy: null, sortDir: null });
