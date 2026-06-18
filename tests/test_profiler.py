@@ -40,3 +40,8 @@ def test_histogram_counts_sum_to_non_null_count():
     s = _df()["price"]
     h = histogram(s)
     assert sum(h["counts"]) == int(s.notna().sum())
+
+
+def test_histogram_empty_when_no_numeric_values():
+    h = histogram(pd.Series([None, None, None]))
+    assert h == {"edges": [], "counts": []}

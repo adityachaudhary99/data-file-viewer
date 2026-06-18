@@ -37,8 +37,9 @@ def profile_column(series: pd.Series) -> dict:
     }
     if pd.api.types.is_bool_dtype(series):
         out["kind"] = "boolean"
-        out["trueCount"] = int((series == True).sum())  # noqa: E712
-        out["falseCount"] = int((series == False).sum())  # noqa: E712
+        non_null_bool = series.dropna()
+        out["trueCount"] = int(non_null_bool.sum())
+        out["falseCount"] = int((~non_null_bool).sum())
     elif pd.api.types.is_numeric_dtype(series):
         out["kind"] = "numeric"
         desc = series.describe()
