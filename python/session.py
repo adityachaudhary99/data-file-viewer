@@ -42,7 +42,7 @@ class Session:
             df = self.table.df.head(RAW_LIMIT)
             data = [{k: to_jsonable(v) for k, v in rec.items()}
                     for rec in df.to_dict(orient="records")]
-            return {"json": {"file_type": "parquet", "rows": self.table.total,
+            return {"json": {"file_type": os.path.splitext(self.path)[1].lstrip("."), "rows": self.table.total,
                              "columns": [c["name"] for c in columns_meta(self.table.df)],
                              "data": data}}
         raise ValueError(f"unknown command: {cmd!r}")
@@ -54,12 +54,14 @@ def main() -> None:
         line = line.strip()
         if not line:
             continue
-        req = json.loads(line)
+        req = None
         try:
+            req = json.loads(line)
             result = session.handle(req)
             reply = {"id": req.get("id"), "ok": True, "result": result}
         except Exception as exc:  # noqa: BLE001 — report, don't crash the session
-            reply = {"id": req.get("id"), "ok": False, "error": str(exc)}
+            rid = req.get("id") if isinstance(req, dict) else None
+            reply = {"id": rid, "ok": False, "error": str(exc)}
         sys.stdout.write(json.dumps(reply) + "\n")
         sys.stdout.flush()
 

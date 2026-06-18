@@ -41,3 +41,15 @@ def test_unknown_command_returns_error_not_crash():
     [reply] = _run([{"id": 7, "cmd": "nope"}])
     assert reply["id"] == 7 and reply["ok"] is False
     assert "nope" in reply["error"]
+
+
+def test_malformed_json_line_does_not_crash():
+    proc = subprocess.run(
+        [sys.executable, SESSION, FIXTURE],
+        input='{bad json}\n' + json.dumps({"id": 5, "cmd": "open"}) + "\n",
+        capture_output=True, text=True, cwd=ROOT, timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    replies = [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
+    by_id = {r.get("id"): r for r in replies}
+    assert by_id[5]["ok"] is True  # valid request after the bad line still works
