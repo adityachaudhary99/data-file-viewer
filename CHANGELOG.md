@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Interactive explorer for `.parquet`: sortable/paginated table, per-column
   profiler (type, null %, distribution histogram, top-k, quality flags),
-  Schema tab, and a Raw (JSON) tab. (Plan 1 of the v2
+  Schema tab, and a backward-compatible Raw (JSON) tab. (Plan 1 of the v2
   explorer; other formats/shapes follow.)
+- Interactive explorer now also handles `.feather` and `.arrow` files (same
+  table + profiler + Schema + Raw experience as parquet). (Plan 2 of the v2 explorer.)
 
 ## [1.0.3] - 2026-01-17
 
