@@ -38,3 +38,9 @@ test('in-flight request rejects when child exits', async () => {
   // The child-exit wiring (child.on('exit', () => rpc.dispose())) rejects in-flight requests
   await assert.rejects(inFlight, /disposed/);
 });
+
+test('dispose() is idempotent (safe to call twice)', () => {
+  const s = fakeSession();
+  s.dispose();
+  s.dispose(); // must not throw
+});

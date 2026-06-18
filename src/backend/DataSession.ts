@@ -37,7 +37,11 @@ export class DataSession {
   profile(column: string): Promise<any> { return this.rpc.request('profile', { column }); }
   rawJson(): Promise<any> { return this.rpc.request('rawJson'); }
 
+  private disposed = false;
+
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     this.rpc.dispose();
     try { this.child.kill(); } catch { /* already gone */ }
   }
