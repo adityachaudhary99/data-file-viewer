@@ -61,3 +61,32 @@ def test_rawjson_reports_truncation_keys():
     assert j["shown"] == 10
     assert j["truncated"] is False
     assert len(j["data"]) == 10
+
+
+def _run_on(fixture, requests):
+    path = os.path.join(ROOT, "tests", "fixtures", fixture)
+    proc = subprocess.run(
+        [sys.executable, SESSION, path],
+        input="\n".join(json.dumps(r) for r in requests) + "\n",
+        capture_output=True, text=True, cwd=ROOT, timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    return [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
+
+
+def test_open_tabular_pickle():
+    [r] = _run_on("sample_df.pkl", [{"id": 1, "cmd": "open"}])
+    assert r["result"]["shapeKind"] == "tabular"
+    assert r["result"]["rowCount"] == 10
+
+
+def test_open_object_pickle_then_rawjson():
+    rs = _run_on("sample_obj.pkl", [{"id": 1, "cmd": "open"}, {"id": 2, "cmd": "rawJson"}])
+    by = {r["id"]: r for r in rs}
+    assert by[1]["result"]["shapeKind"] == "object"
+    assert by[2]["result"]["json"]["data"]["model"] == "demo"
+
+
+def test_avro_opens_tabular():
+    [r] = _run_on("sample.avro", [{"id": 1, "cmd": "open"}])
+    assert r["result"]["shapeKind"] == "tabular" and r["result"]["rowCount"] == 10

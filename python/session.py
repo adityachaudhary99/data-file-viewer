@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from python.classify import classify
 from python.loaders.tabular import load_tabular, columns_meta
+from python.loaders.objects import load_auto
 from python.paging import page as page_df
 from python.profiler import profile_column
 from python.jsonsafe import to_jsonable
@@ -17,36 +18,52 @@ RAW_LIMIT = 1000
 class Session:
     def __init__(self, path: str):
         self.path = path
-        self.kind = classify(path)
+        self.kind = classify(path)          # "tabular" | "auto"
         self._table = None
+        self._obj_json = None
+        self.shape_kind = None              # resolved at open: "tabular" | "object"
 
-    @property
-    def table(self):
-        if self._table is None:
+    def _ensure_loaded(self):
+        if self.shape_kind is not None:
+            return
+        if self.kind == "tabular":
             self._table = load_tabular(self.path, MAX_ROWS)
-        return self._table
+            self.shape_kind = "tabular"
+        else:  # auto
+            a = load_auto(self.path, MAX_ROWS)
+            self.shape_kind = a.kind
+            self._table = a.table
+            self._obj_json = a.obj_json
 
     def handle(self, req: dict) -> dict:
         cmd = req.get("cmd")
         if cmd == "open":
-            t = self.table
-            return {"shapeKind": self.kind, "columns": columns_meta(t.df),
+            self._ensure_loaded()
+            if self.shape_kind == "object":
+                return {"shapeKind": "object", "fileMeta": {"name": os.path.basename(self.path)}}
+            t = self._table
+            return {"shapeKind": "tabular", "columns": columns_meta(t.df),
                     "rowCount": t.total, "sampled": t.sampled}
+        self._ensure_loaded()
+        if self.shape_kind == "object":
+            if cmd == "rawJson":
+                return {"json": self._obj_json}
+            raise ValueError(f"command {cmd!r} not available for object files")
+        # tabular commands (unchanged)
         if cmd == "page":
-            return page_df(self.table.df, req.get("offset", 0), req.get("limit", 100),
+            return page_df(self._table.df, req.get("offset", 0), req.get("limit", 100),
                            req.get("sortBy"), req.get("sortDir"))
         if cmd == "profile":
-            col = req["column"]
-            return profile_column(self.table.df[col])
+            return profile_column(self._table.df[req["column"]])
         if cmd == "rawJson":
-            df = self.table.df.head(RAW_LIMIT)
+            df = self._table.df.head(RAW_LIMIT)
             data = [{k: to_jsonable(v) for k, v in rec.items()}
                     for rec in df.to_dict(orient="records")]
             return {"json": {"file_type": os.path.splitext(self.path)[1].lstrip("."),
-                             "rows": self.table.total,
+                             "rows": self._table.total,
                              "shown": len(data),
-                             "truncated": self.table.total > len(data),
-                             "columns": [c["name"] for c in columns_meta(self.table.df)],
+                             "truncated": self._table.total > len(data),
+                             "columns": [c["name"] for c in columns_meta(self._table.df)],
                              "data": data}}
         raise ValueError(f"unknown command: {cmd!r}")
 
