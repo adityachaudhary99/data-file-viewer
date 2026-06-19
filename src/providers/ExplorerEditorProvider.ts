@@ -25,6 +25,18 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
   async resolveCustomEditor(document: vscode.CustomDocument, panel: vscode.WebviewPanel): Promise<void> {
     panel.webview.options = { enableScripts: true };
 
+    const ext = path.extname(document.uri.fsPath).toLowerCase();
+    if (ext === '.pkl' || ext === '.pickle' || ext === '.joblib') {
+      const choice = await vscode.window.showWarningMessage(
+        'Opening a pickle/joblib file executes Python code during deserialization. Only open files you trust.',
+        { modal: true }, 'Open Anyway',
+      );
+      if (choice !== 'Open Anyway') {
+        panel.webview.html = '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\';"></head><body style="font-family:sans-serif;padding:16px">Cancelled — pickle file not opened.</body></html>';
+        return;
+      }
+    }
+
     const ok = await PythonEnv.ensureReady();
     if (!ok) {
       panel.webview.html = `<body style="padding:16px;font-family:sans-serif">Python packages are required. Install with:<br><code>pip install pandas pyarrow</code></body>`;
