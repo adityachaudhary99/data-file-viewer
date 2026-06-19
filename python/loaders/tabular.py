@@ -28,8 +28,10 @@ def _read_avro(path: str) -> pd.DataFrame:
     from avro.io import DatumReader
     with open(path, "rb") as f:
         reader = DataFileReader(f, DatumReader())
-        records = list(reader)
-        reader.close()
+        try:
+            records = list(reader)
+        finally:
+            reader.close()
     return pd.DataFrame.from_records(records)
 
 
