@@ -118,6 +118,14 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     window.addEventListener('message', (e) => {
       const m = e.data;
       if (m.type === 'open') {
+        if (m.result.shapeKind === 'object') {
+          for (const t of document.querySelectorAll('.tab')) if (t.dataset.tab !== 'raw') t.classList.add('hidden');
+          document.querySelector('.nav').classList.add('hidden');
+          document.querySelector('.insp').classList.add('hidden');
+          $('status').textContent = fileName + ' — object (Raw view)';
+          showTab('raw');           // showTab already sends rawJson
+          return;
+        }
         columns = m.result.columns;
         sortBy = null; sortDir = null; selected = null;
         $('status').textContent = fileName + ' — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
