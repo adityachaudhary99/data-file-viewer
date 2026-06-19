@@ -29,3 +29,11 @@ def test_feather_and_arrow_fixtures_match_parquet_shape():
         arrow_df = pa.ipc.open_file(src).read_all().to_pandas()
     assert list(arrow_df.columns) == ["id", "price", "region", "active"]
     assert len(arrow_df) == 10
+
+
+def test_plan3_fixtures_exist():
+    base = os.path.join(os.path.dirname(__file__), "fixtures")
+    for name in ["sample.avro", "sample_df.pkl", "sample_df.joblib",
+                 "sample_obj.pkl", "sample_records.msgpack", "sample_obj.msgpack"]:
+        p = os.path.join(base, name)
+        assert os.path.exists(p) and os.path.getsize(p) > 0, name
