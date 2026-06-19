@@ -23,6 +23,16 @@ def _read_arrow_ipc(path: str) -> pd.DataFrame:
     return table.to_pandas()
 
 
+def _read_avro(path: str) -> pd.DataFrame:
+    from avro.datafile import DataFileReader
+    from avro.io import DatumReader
+    with open(path, "rb") as f:
+        reader = DataFileReader(f, DatumReader())
+        records = list(reader)
+        reader.close()
+    return pd.DataFrame.from_records(records)
+
+
 def _read_table(path: str):
     """Return (full_dataframe, true_row_count) for a supported tabular file."""
     ext = os.path.splitext(path)[1].lower()
@@ -34,6 +44,9 @@ def _read_table(path: str):
         return df, len(df)
     if ext == ".arrow":
         df = _read_arrow_ipc(path)
+        return df, len(df)
+    if ext == ".avro":
+        df = _read_avro(path)
         return df, len(df)
     raise ValueError(f"unsupported tabular extension: {ext}")
 

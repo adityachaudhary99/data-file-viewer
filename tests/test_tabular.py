@@ -36,3 +36,12 @@ def test_load_tabular_reads_feather_and_arrow(fixture):
     assert t.total == 10
     assert t.sampled is False
     assert [c["name"] for c in columns_meta(t.df)] == ["id", "price", "region", "active"]
+
+
+def test_load_tabular_reads_avro():
+    import os
+    path = os.path.join(os.path.dirname(__file__), "fixtures", "sample.avro")
+    t = load_tabular(path)
+    assert t.total == 10
+    assert [c["name"] for c in columns_meta(t.df)] == ["id", "price", "region", "active"]
+    assert t.df["price"].isna().sum() == 1
