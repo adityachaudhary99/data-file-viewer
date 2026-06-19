@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   explorer; other formats/shapes follow.)
 - Interactive explorer now also handles `.feather` and `.arrow` files (same
   table + profiler + Schema + Raw experience as parquet). (Plan 2 of the v2 explorer.)
+- Explorer support for `.avro` (record tables) and `.pkl`/`.pickle`/`.joblib`/`.msgpack`:
+  DataFrame/record-list content opens as an interactive table+profiler; any other
+  object opens as a Raw (JSON) view. Pickle/joblib files prompt a trust warning
+  before loading. (Plan 3 of the v2 explorer.)
 
 ## [1.0.3] - 2026-01-17
 
