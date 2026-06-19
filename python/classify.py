@@ -9,6 +9,12 @@ _EXT_TO_KIND = {
     ".parquet": "tabular",
     ".feather": "tabular",
     ".arrow": "tabular",
+    ".avro": "tabular",
+    ".pkl": "auto",
+    ".pickle": "auto",
+    ".joblib": "auto",
+    ".msgpack": "auto",
+    ".mp": "auto",
 }
 
 
