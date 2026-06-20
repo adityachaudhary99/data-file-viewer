@@ -1,7 +1,9 @@
 import os
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 from python.jsonsafe import to_jsonable
+from python.profiler import histogram
 
 
 @dataclass
@@ -53,6 +55,53 @@ def _to_2d(arr):
     lead = arr.ndim - 2
     label = "[" + ", ".join(["0"] * lead + [":", ":"]) + "]"
     return arr[(0,) * lead], True, label
+
+
+def _is_numeric(arr) -> bool:
+    return np.issubdtype(arr.dtype, np.integer) or np.issubdtype(arr.dtype, np.floating)
+
+
+def array_profile(arr, bins: int = 20) -> dict:
+    out = member_meta(arr)
+    if not _is_numeric(arr):
+        out["kind"] = "non-numeric"
+        return out
+    out["kind"] = "numeric"
+    flat = np.asarray(arr).ravel()
+    if np.issubdtype(arr.dtype, np.floating):
+        nan_count = int(np.isnan(flat).sum())
+        inf_count = int(np.isinf(flat).sum())
+    else:
+        nan_count = inf_count = 0
+    finite = flat[np.isfinite(flat)]
+    out["nanCount"] = nan_count
+    out["infCount"] = inf_count
+    out["finite"] = int(finite.size)
+    if finite.size:
+        out["min"] = to_jsonable(finite.min())
+        out["max"] = to_jsonable(finite.max())
+        out["mean"] = to_jsonable(finite.mean())
+        out["std"] = to_jsonable(finite.std())
+    else:
+        out["min"] = out["max"] = out["mean"] = out["std"] = None
+    out["histogram"] = histogram(pd.Series(finite))
+    return out
+
+
+def array_raw(loaded: "LoadedArrays", path: str) -> dict:
+    members = []
+    for m in loaded.members:
+        flat = np.asarray(m.arr).ravel()
+        preview = [to_jsonable(v) for v in flat[:100]]
+        members.append({
+            "name": m.name,
+            "shape": [int(d) for d in m.arr.shape],
+            "dtype": str(m.arr.dtype),
+            "size": int(m.arr.size),
+            "preview": preview,
+            "truncated": int(m.arr.size) > 100,
+        })
+    return {"file_type": os.path.splitext(path)[1].lstrip("."), "members": members}
 
 
 def array_page(arr, offset: int = 0, limit: int = 200, max_cols: int = 200) -> dict:

@@ -82,3 +82,41 @@ def test_array_page_caps_columns():
     res = array_page(wide, max_cols=200)
     assert len(res["columns"]) == 200
     assert res["colCount"] == 250 and res["colsTruncated"] is True
+
+
+from python.loaders.arrays import array_profile, array_raw
+
+
+def test_array_profile_numeric_counts_nan_inf():
+    loaded = load_arrays(os.path.join(FX, "arr_2d.npy"))
+    p = array_profile(loaded.members[0].arr)
+    assert p["kind"] == "numeric"
+    assert p["shape"] == [4, 3] and p["dtype"] == "float64"
+    assert p["nanCount"] == 1 and p["infCount"] == 1
+    assert p["finite"] == 10
+    assert p["min"] == 0.0 and p["max"] == 11.0
+    assert p["histogram"]["counts"] and sum(p["histogram"]["counts"]) == 10
+
+
+def test_array_profile_integer_has_no_nan():
+    loaded = load_arrays(os.path.join(FX, "arr_1d.npy"))
+    p = array_profile(loaded.members[0].arr)
+    assert p["kind"] == "numeric"
+    assert p["nanCount"] == 0 and p["infCount"] == 0 and p["finite"] == 10
+    assert p["min"] == 0 and p["max"] == 9
+
+
+def test_array_profile_non_numeric_is_meta_only():
+    loaded = load_arrays(os.path.join(FX, "arr_str.npy"))
+    p = array_profile(loaded.members[0].arr)
+    assert p["kind"] == "non-numeric"
+    assert p["size"] == 3 and "histogram" not in p
+
+
+def test_array_raw_previews_members():
+    loaded = load_arrays(os.path.join(FX, "sample.npz"))
+    raw = array_raw(loaded, os.path.join(FX, "sample.npz"))
+    assert raw["file_type"] == "npz"
+    assert [m["name"] for m in raw["members"]] == ["x", "y"]
+    assert raw["members"][0]["preview"] == [0, 1, 2, 3, 4, 5]
+    assert raw["members"][0]["truncated"] is False
