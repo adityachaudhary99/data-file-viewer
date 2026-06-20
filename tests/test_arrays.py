@@ -30,3 +30,55 @@ def test_member_meta_scalar():
     loaded = load_arrays(os.path.join(FX, "arr_scalar.npy"))
     meta = member_meta(loaded.members[0].arr)
     assert meta["shape"] == [] and meta["ndim"] == 0 and meta["size"] == 1
+
+
+from python.loaders.arrays import array_page
+
+
+def test_array_page_2d_window_and_nan_inf_become_null():
+    loaded = load_arrays(os.path.join(FX, "arr_2d.npy"))
+    res = array_page(loaded.members[0].arr, offset=0, limit=2)
+    assert res["columns"] == ["0", "1", "2"]
+    assert res["rowCount"] == 4 and res["colCount"] == 3
+    assert res["sliced"] is False and res["colsTruncated"] is False
+    assert len(res["rows"]) == 2  # limit=2 -> only rows 0..1
+    assert res["rows"][0] == [0.0, 1.0, 2.0]
+    assert res["rows"][1][1] is None  # NaN at [1,1] -> null
+
+
+def test_array_page_2d_inf_is_null():
+    loaded = load_arrays(os.path.join(FX, "arr_2d.npy"))
+    res = array_page(loaded.members[0].arr, offset=2, limit=1)
+    assert res["rows"][0][0] is None  # +inf at [2,0] -> null
+
+
+def test_array_page_1d_is_single_column():
+    loaded = load_arrays(os.path.join(FX, "arr_1d.npy"))
+    res = array_page(loaded.members[0].arr)
+    assert res["columns"] == ["0"]
+    assert res["rowCount"] == 10 and res["colCount"] == 1
+    assert res["rows"][0] == [0] and res["rows"][9] == [9]
+
+
+def test_array_page_3d_shows_leading_slice():
+    loaded = load_arrays(os.path.join(FX, "arr_3d.npy"))
+    res = array_page(loaded.members[0].arr)
+    assert res["sliced"] is True
+    assert res["sliceLabel"] == "[0, :, :]"
+    assert res["rowCount"] == 3 and res["colCount"] == 4  # arr[0] is (3,4)
+    assert res["rows"][0] == [0.0, 1.0, 2.0, 3.0]
+
+
+def test_array_page_scalar_is_one_cell():
+    loaded = load_arrays(os.path.join(FX, "arr_scalar.npy"))
+    res = array_page(loaded.members[0].arr)
+    assert res["rowCount"] == 1 and res["colCount"] == 1
+    assert res["rows"] == [[42.0]]
+
+
+def test_array_page_caps_columns():
+    import numpy as np
+    wide = np.zeros((2, 250), dtype="float64")
+    res = array_page(wide, max_cols=200)
+    assert len(res["columns"]) == 200
+    assert res["colCount"] == 250 and res["colsTruncated"] is True
