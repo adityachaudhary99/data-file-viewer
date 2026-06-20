@@ -10,6 +10,8 @@ _EXT_TO_KIND = {
     ".feather": "tabular",
     ".arrow": "tabular",
     ".avro": "tabular",
+    ".npy": "array",
+    ".npz": "array",
     ".pkl": "auto",
     ".pickle": "auto",
     ".joblib": "auto",
