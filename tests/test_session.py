@@ -90,3 +90,38 @@ def test_open_object_pickle_then_rawjson():
 def test_avro_opens_tabular():
     [r] = _run_on("sample.avro", [{"id": 1, "cmd": "open"}])
     assert r["result"]["shapeKind"] == "tabular" and r["result"]["rowCount"] == 10
+
+
+def test_open_npy_is_array_with_one_member():
+    [r] = _run_on("arr_2d.npy", [{"id": 1, "cmd": "open"}])
+    res = r["result"]
+    assert res["shapeKind"] == "array"
+    assert [m["name"] for m in res["members"]] == ["array"]
+    assert res["members"][0]["shape"] == [4, 3]
+
+
+def test_open_npz_lists_members():
+    [r] = _run_on("sample.npz", [{"id": 1, "cmd": "open"}])
+    assert [m["name"] for m in r["result"]["members"]] == ["x", "y"]
+
+
+def test_array_page_and_profile_select_member_via_column():
+    rs = _run_on("sample.npz", [
+        {"id": 1, "cmd": "page", "column": "y", "offset": 0, "limit": 100},
+        {"id": 2, "cmd": "profile", "column": "y"},
+    ])
+    by = {r["id"]: r for r in rs}
+    assert by[1]["result"]["rowCount"] == 3 and by[1]["result"]["colCount"] == 2
+    assert by[2]["result"]["kind"] == "numeric"
+
+
+def test_array_page_defaults_to_first_member():
+    [r] = _run_on("sample.npz", [{"id": 1, "cmd": "page", "offset": 0, "limit": 100}])
+    assert r["result"]["rowCount"] == 6 and r["result"]["colCount"] == 1  # member x (1-D)
+
+
+def test_array_rawjson_summary():
+    [r] = _run_on("arr_1d.npy", [{"id": 1, "cmd": "rawJson"}])
+    j = r["result"]["json"]
+    assert j["file_type"] == "npy"
+    assert j["members"][0]["preview"] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from python.classify import classify
 from python.loaders.tabular import load_tabular, columns_meta
 from python.loaders.objects import load_auto
+from python.loaders.arrays import load_arrays, member_meta, array_page, array_profile, array_raw
 from python.paging import page as page_df
 from python.profiler import profile_column
 from python.jsonsafe import to_jsonable
@@ -18,10 +19,11 @@ RAW_LIMIT = 1000
 class Session:
     def __init__(self, path: str):
         self.path = path
-        self.kind = classify(path)          # "tabular" | "auto"
+        self.kind = classify(path)          # "tabular" | "array" | "auto"
         self._table = None
         self._obj_json = None
-        self.shape_kind = None              # resolved at open: "tabular" | "object"
+        self._arrays = None
+        self.shape_kind = None              # resolved at open: "tabular" | "object" | "array"
 
     def _ensure_loaded(self):
         if self.shape_kind is not None:
@@ -29,11 +31,21 @@ class Session:
         if self.kind == "tabular":
             self._table = load_tabular(self.path, MAX_ROWS)
             self.shape_kind = "tabular"
+        elif self.kind == "array":
+            self._arrays = load_arrays(self.path)
+            self.shape_kind = "array"
         else:  # auto
             a = load_auto(self.path, MAX_ROWS)
             self.shape_kind = a.kind
             self._table = a.table
             self._obj_json = a.obj_json
+
+    def _member_arr(self, name):
+        members = self._arrays.members
+        for m in members:
+            if m.name == name:
+                return m.arr
+        return members[0].arr
 
     def handle(self, req: dict) -> dict:
         cmd = req.get("cmd")
@@ -41,6 +53,10 @@ class Session:
             self._ensure_loaded()
             if self.shape_kind == "object":
                 return {"shapeKind": "object", "fileMeta": {"name": os.path.basename(self.path)}}
+            if self.shape_kind == "array":
+                return {"shapeKind": "array",
+                        "members": [dict(name=m.name, **member_meta(m.arr)) for m in self._arrays.members],
+                        "fileMeta": {"name": os.path.basename(self.path)}}
             t = self._table
             return {"shapeKind": "tabular", "columns": columns_meta(t.df),
                     "rowCount": t.total, "sampled": t.sampled}
@@ -49,6 +65,16 @@ class Session:
             if cmd == "rawJson":
                 return {"json": self._obj_json}
             raise ValueError(f"command {cmd!r} not available for object files")
+        if self.shape_kind == "array":
+            # member name rides on the `column` request field (no RPC change)
+            if cmd == "page":
+                return array_page(self._member_arr(req.get("column")),
+                                  req.get("offset", 0), req.get("limit", 200))
+            if cmd == "profile":
+                return array_profile(self._member_arr(req.get("column")))
+            if cmd == "rawJson":
+                return {"json": array_raw(self._arrays, self.path)}
+            raise ValueError(f"command {cmd!r} not available for array files")
         # tabular commands (unchanged)
         if cmd == "page":
             return page_df(self._table.df, req.get("offset", 0), req.get("limit", 100),
