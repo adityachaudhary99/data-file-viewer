@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scaleHistogram, formatStat, rowsToCsv } from './viewmodel';
+import { scaleHistogram, formatStat, rowsToCsv, formatShape } from './viewmodel';
 
 test('scaleHistogram scales tallest bar to maxPx', () => {
   assert.deepEqual(scaleHistogram([0, 5, 10], 100), [0, 50, 100]);
@@ -16,4 +16,10 @@ test('formatStat handles null and floats', () => {
 test('rowsToCsv quotes and escapes', () => {
   const csv = rowsToCsv(['a', 'b'], [['x,y', null], ['he said "hi"', 2]]);
   assert.equal(csv, 'a,b\r\n"x,y",\r\n"he said ""hi""",2');
+});
+
+test('formatShape joins dims and renders scalar', () => {
+  assert.strictEqual(formatShape([4, 3]), '4 × 3');
+  assert.strictEqual(formatShape([10]), '10');
+  assert.strictEqual(formatShape([]), '()');
 });

@@ -21,3 +21,8 @@ export function rowsToCsv(columns: string[], rows: unknown[][]): string {
   for (const row of rows) lines.push(row.map(csvField).join(','));
   return lines.join('\r\n');
 }
+
+export function formatShape(shape: number[]): string {
+  if (!shape || shape.length === 0) return '()';
+  return shape.join(' × ');
+}

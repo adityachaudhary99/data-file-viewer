@@ -50,6 +50,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     const vscode = acquireVsCodeApi();
     const fileName = ${JSON.stringify(fileName)};
     let columns = [], sortBy = null, sortDir = null, selected = null;
+    let mode = 'tabular', members = [], selMember = null;
     const $ = (id) => document.getElementById(id);
 
     function send(cmd, args) { vscode.postMessage({ type: 'request', cmd, args: args || {} }); }
@@ -108,6 +109,51 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     }
     function renderProfileTab() { $('view-profile').innerHTML = '<div class="note">Click a column in the navigator to profile it.</div>'; }
 
+    function fmtShape(s){ return (!s || s.length === 0) ? '()' : s.join(' × '); }
+
+    function renderMemberNav() {
+      $('nav').innerHTML = '';
+      members.forEach((mem) => {
+        const d = document.createElement('div');
+        d.className = 'col' + (mem.name === selMember ? ' sel' : '');
+        d.textContent = mem.name; d.title = mem.dtype + ' · ' + fmtShape(mem.shape);
+        d.onclick = () => selectMember(mem.name);
+        $('nav').appendChild(d);
+      });
+    }
+    function selectMember(name) {
+      selMember = name; renderMemberNav();
+      send('page', { column: name, offset: 0, limit: 200 });
+      send('profile', { column: name });
+    }
+    function renderArraySchema() {
+      $('view-schema').innerHTML = '<table><tr><th>array</th><th>dtype</th><th>shape</th><th>size</th></tr>' +
+        members.map((mem) => '<tr><td>' + esc(mem.name) + '</td><td>' + esc(mem.dtype) +
+          '</td><td>' + esc(fmtShape(mem.shape)) + '</td><td>' + mem.size + '</td></tr>').join('') + '</table>';
+    }
+    function renderArrayGrid(res) {
+      const notes = [];
+      if (res.sliced) notes.push('N-D array — showing slice ' + res.sliceLabel);
+      if (res.colsTruncated) notes.push('columns truncated to ' + res.columns.length + ' of ' + res.colCount);
+      if (res.rowCount > res.rows.length) notes.push('showing first ' + res.rows.length + ' of ' + res.rowCount + ' rows');
+      $('sampleNote').textContent = notes.join(' · ');
+      const head = '<tr><th>#</th>' + res.columns.map((c) => '<th>' + esc(c) + '</th>').join('') + '</tr>';
+      const body = res.rows.map((r, i) => '<tr><td class="note">' + i + '</td>' + r.map((v) =>
+        '<td>' + (v === null ? '<span class="note">null</span>' : esc(String(v))) + '</td>').join('') + '</tr>').join('');
+      $('tbl').innerHTML = head + body;
+    }
+    function renderArrayInspector(p) {
+      let html = '<h3>' + esc(selMember || '') + '</h3>';
+      html += '<div class="note">' + esc(p.dtype) + ' · ' + esc(p.kind) + '</div>';
+      html += '<p>shape ' + esc(fmtShape(p.shape)) + '<br>ndim ' + p.ndim + ' · size ' + p.size + '</p>';
+      if (p.kind === 'numeric') {
+        html += '<p>min ' + fmt(p.min) + ' · max ' + fmt(p.max) + '<br>mean ' + fmt(p.mean) + ' · std ' + fmt(p.std) +
+          '<br>NaN ' + p.nanCount + ' · Inf ' + p.infCount + ' · finite ' + p.finite + '</p>';
+        if (p.histogram) html += histHtml(p.histogram.counts);
+      }
+      $('insp').innerHTML = html;
+    }
+
     function histHtml(counts) {
       const max = Math.max(1, ...counts);
       return '<div class="hist">' + counts.map((c) => '<i style="height:' + Math.round(c/max*60) + 'px"></i>').join('') + '</div>';
@@ -126,13 +172,21 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
           showTab('raw');           // showTab already sends rawJson
           return;
         }
+        if (m.result.shapeKind === 'array') {
+          mode = 'array';
+          members = m.result.members;
+          $('status').textContent = fileName + ' — ' + members.length + ' array' + (members.length === 1 ? '' : 's');
+          renderMemberNav(); renderArraySchema();
+          if (members.length) selectMember(members[0].name);
+          return;
+        }
         columns = m.result.columns;
         sortBy = null; sortDir = null; selected = null;
         $('status').textContent = fileName + ' — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
         $('sampleNote').textContent = m.result.sampled ? 'Showing a sample of the file.' : '';
         renderNav(); renderSchema(); send('page', { offset: 0, limit: 200, sortBy: null, sortDir: null });
-      } else if (m.type === 'page') { renderTable(m.result.rows); }
-      else if (m.type === 'profile') { renderInspector(Object.assign({ column: selected }, m.result)); }
+      } else if (m.type === 'page') { mode === 'array' ? renderArrayGrid(m.result) : renderTable(m.result.rows); }
+      else if (m.type === 'profile') { mode === 'array' ? renderArrayInspector(m.result) : renderInspector(Object.assign({ column: selected }, m.result)); }
       else if (m.type === 'raw') { $('raw').textContent = JSON.stringify(m.result.json, null, 2); }
       else if (m.type === 'error') { $('status').textContent = 'Error: ' + m.error; }
     });
