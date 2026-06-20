@@ -1,5 +1,6 @@
 # tests/test_fixtures.py
 import os
+import pytest
 import pandas as pd
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample.parquet")
@@ -37,3 +38,12 @@ def test_plan3_fixtures_exist():
                  "sample_obj.pkl", "sample_records.msgpack", "sample_obj.msgpack"]:
         p = os.path.join(base, name)
         assert os.path.exists(p) and os.path.getsize(p) > 0, name
+
+
+ARRAY_FIXTURES = ["arr_2d.npy", "arr_1d.npy", "arr_3d.npy", "arr_scalar.npy", "arr_str.npy", "sample.npz"]
+
+
+@pytest.mark.parametrize("name", ARRAY_FIXTURES)
+def test_array_fixture_exists(name):
+    path = os.path.join(os.path.dirname(__file__), "fixtures", name)
+    assert os.path.exists(path) and os.path.getsize(path) > 0

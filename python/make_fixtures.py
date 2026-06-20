@@ -18,6 +18,21 @@ def make_sample_dataframe() -> pd.DataFrame:
     })
 
 
+def make_array_fixtures(fixture_dir: str) -> None:
+    import numpy as np
+    a2d = np.arange(12, dtype="float64").reshape(4, 3)
+    a2d[1, 1] = np.nan
+    a2d[2, 0] = np.inf
+    np.save(os.path.join(fixture_dir, "arr_2d.npy"), a2d)
+    np.save(os.path.join(fixture_dir, "arr_1d.npy"), np.arange(10, dtype="int64"))
+    np.save(os.path.join(fixture_dir, "arr_3d.npy"), np.arange(24, dtype="float64").reshape(2, 3, 4))
+    np.save(os.path.join(fixture_dir, "arr_scalar.npy"), np.array(42.0))
+    np.save(os.path.join(fixture_dir, "arr_str.npy"), np.array(["alpha", "beta", "gamma"]))
+    np.savez(os.path.join(fixture_dir, "sample.npz"),
+             x=np.arange(6, dtype="int64"), y=np.arange(6, dtype="float64").reshape(3, 2))
+    print("wrote npy/npz array fixtures")
+
+
 def main() -> None:
     os.makedirs(FIXTURE_DIR, exist_ok=True)
     df = make_sample_dataframe()
@@ -81,6 +96,8 @@ def main() -> None:
             })
         writer.close()
     print("wrote avro + pickle/joblib/msgpack fixtures")
+
+    make_array_fixtures(FIXTURE_DIR)
 
 
 if __name__ == "__main__":
