@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   DataFrame/record-list content opens as an interactive table+profiler; any other
   object opens as a Raw (JSON) view. Pickle/joblib files prompt a trust warning
   before loading. (Plan 3 of the v2 explorer.)
+- Interactive explorer for `.npy` and `.npz` (NumPy arrays): 2-D grid view (N-D
+  arrays show a leading slice), per-array profile (shape, dtype, min/max/mean/std,
+  NaN/Inf counts, histogram), archive navigator for `.npz` members, and Raw summary
+  tab. Arrays load with `allow_pickle=False` (object arrays are refused for safety).
+  The legacy Raw-only NumPy viewer was removed. (Plan 4 of the v2 explorer.)
 
 ## [1.0.3] - 2026-01-17
 
