@@ -113,3 +113,20 @@ def node_arr(loaded: "LoadedHier", path):
         if n["kind"] == "leaf":
             return loaded.arrays[n["path"]]
     return None
+
+
+def hier_raw(loaded: "LoadedHier", path: str) -> dict:
+    """Raw-tab summary: the full tree, with a small flat preview per leaf."""
+    out_nodes = []
+    for n in loaded.nodes:
+        entry = {"path": n["path"], "name": n["name"],
+                 "kind": n["kind"], "depth": n["depth"]}
+        if n["kind"] == "leaf":
+            arr = loaded.arrays[n["path"]]
+            flat = np.asarray(arr).ravel()
+            entry["shape"] = n["shape"]
+            entry["dtype"] = n["dtype"]
+            entry["preview"] = [to_jsonable(v) for v in flat[:100]]
+            entry["truncated"] = int(arr.size) > 100
+        out_nodes.append(entry)
+    return {"file_type": os.path.splitext(path)[1].lstrip("."), "nodes": out_nodes}

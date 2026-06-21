@@ -1,6 +1,7 @@
 import os
 import numpy as np
-from python.loaders.hierarchical import load_hier, node_arr
+from python.loaders.arrays import array_page, array_profile
+from python.loaders.hierarchical import load_hier, node_arr, hier_raw
 
 FX = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -61,3 +62,24 @@ def test_mat_arrays_and_struct_group():
     assert by["/vector"]["shape"] == [4]
     assert "/matrix" in loaded.arrays and "/params/b" in loaded.arrays
     assert loaded.arrays["/matrix"].shape == (2, 3)
+
+
+def test_leaf_reuses_array_page_and_profile():
+    loaded = load_hier(os.path.join(FX, "sample.h5"))
+    page = array_page(node_arr(loaded, "/grp/values"))
+    assert page["columns"] == ["0", "1", "2", "3"]
+    assert page["rowCount"] == 3 and page["colCount"] == 4
+    assert page["rows"][0][0] is None       # NaN at [0,0] -> null
+    prof = array_profile(node_arr(loaded, "/ids"))
+    assert prof["kind"] == "numeric" and prof["min"] == 0 and prof["max"] == 4
+
+
+def test_hier_raw_lists_nodes_with_leaf_previews():
+    loaded = load_hier(os.path.join(FX, "sample.h5"))
+    raw = hier_raw(loaded, os.path.join(FX, "sample.h5"))
+    assert raw["file_type"] == "h5"
+    by = {n["path"]: n for n in raw["nodes"]}
+    assert by["/grp"]["kind"] == "group" and "preview" not in by["/grp"]
+    assert by["/ids"]["preview"] == [0, 1, 2, 3, 4]
+    assert by["/ids"]["truncated"] is False
+    assert by["/grp/values"]["preview"][0] is None   # NaN -> null via to_jsonable
