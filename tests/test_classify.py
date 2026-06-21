@@ -28,3 +28,8 @@ def test_object_family_is_auto():
 def test_classify_npy_and_npz_are_array():
     assert classify("/x/data.npy") == "array"
     assert classify("/x/data.npz") == "array"
+
+
+@pytest.mark.parametrize("ext", [".h5", ".hdf5", ".nc", ".nc4", ".netcdf", ".mat"])
+def test_hierarchical_extensions(ext):
+    assert classify("file" + ext) == "hierarchical"
