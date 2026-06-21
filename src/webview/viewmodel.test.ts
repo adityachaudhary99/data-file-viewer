@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scaleHistogram, formatStat, rowsToCsv, formatShape } from './viewmodel';
+import { scaleHistogram, formatStat, rowsToCsv, formatShape, treeIndent } from './viewmodel';
 
 test('scaleHistogram scales tallest bar to maxPx', () => {
   assert.deepEqual(scaleHistogram([0, 5, 10], 100), [0, 50, 100]);
@@ -22,4 +22,9 @@ test('formatShape joins dims and renders scalar', () => {
   assert.strictEqual(formatShape([4, 3]), '4 × 3');
   assert.strictEqual(formatShape([10]), '10');
   assert.strictEqual(formatShape([]), '()');
+});
+
+test('treeIndent grows with depth', () => {
+  assert.strictEqual(treeIndent(0), 6);
+  assert.strictEqual(treeIndent(2), 30);
 });

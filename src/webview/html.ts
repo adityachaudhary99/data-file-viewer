@@ -51,6 +51,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     const fileName = ${JSON.stringify(fileName)};
     let columns = [], sortBy = null, sortDir = null, selected = null;
     let mode = 'tabular', members = [], selMember = null;
+    let tree = [], selNode = null, selLabel = null;
     const $ = (id) => document.getElementById(id);
 
     function send(cmd, args) { vscode.postMessage({ type: 'request', cmd, args: args || {} }); }
@@ -122,7 +123,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       });
     }
     function selectMember(name) {
-      selMember = name; renderMemberNav();
+      selMember = name; selLabel = name; renderMemberNav();
       send('page', { column: name, offset: 0, limit: 200 });
       send('profile', { column: name });
     }
@@ -143,7 +144,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       $('tbl').innerHTML = head + body;
     }
     function renderArrayInspector(p) {
-      let html = '<h3>' + esc(selMember || '') + '</h3>';
+      let html = '<h3>' + esc(selLabel || '') + '</h3>';
       html += '<div class="note">' + esc(p.dtype) + ' · ' + esc(p.kind) + '</div>';
       html += '<p>shape ' + esc(fmtShape(p.shape)) + '<br>ndim ' + p.ndim + ' · size ' + p.size + '</p>';
       if (p.kind === 'numeric') {
@@ -152,6 +153,33 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
         if (p.histogram) html += histHtml(p.histogram.counts);
       }
       $('insp').innerHTML = html;
+    }
+
+    function renderTreeNav() {
+      $('nav').innerHTML = '';
+      tree.forEach((n) => {
+        const isLeaf = n.kind === 'leaf';
+        const d = document.createElement('div');
+        d.className = 'col' + (n.path === selNode ? ' sel' : '');
+        d.style.paddingLeft = (6 + n.depth * 12) + 'px';
+        d.textContent = (isLeaf ? '' : '▸ ') + n.name;
+        if (isLeaf) {
+          d.title = n.dtype + ' · ' + fmtShape(n.shape);
+          d.onclick = () => selectNode(n.path);
+        } else { d.style.opacity = '0.7'; }
+        $('nav').appendChild(d);
+      });
+    }
+    function selectNode(path) {
+      selNode = path; selLabel = path; renderTreeNav();
+      send('page', { column: path, offset: 0, limit: 200 });
+      send('profile', { column: path });
+    }
+    function renderHierSchema() {
+      $('view-schema').innerHTML = '<table><tr><th>node</th><th>kind</th><th>dtype</th><th>shape</th></tr>' +
+        tree.map((n) => '<tr><td>' + esc(n.path) + '</td><td>' + esc(n.kind) + '</td><td>' +
+          esc(n.dtype || '') + '</td><td>' + esc(n.kind === 'leaf' ? fmtShape(n.shape) : '') +
+          '</td></tr>').join('') + '</table>';
     }
 
     function histHtml(counts) {
@@ -180,13 +208,22 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
           if (members.length) selectMember(members[0].name);
           return;
         }
+        if (m.result.shapeKind === 'hierarchical') {
+          mode = 'hierarchical';
+          tree = m.result.tree;
+          const leaves = tree.filter((n) => n.kind === 'leaf');
+          $('status').textContent = fileName + ' — ' + leaves.length + ' dataset' + (leaves.length === 1 ? '' : 's');
+          renderTreeNav(); renderHierSchema();
+          if (leaves.length) selectNode(leaves[0].path);
+          return;
+        }
         columns = m.result.columns;
         sortBy = null; sortDir = null; selected = null;
         $('status').textContent = fileName + ' — ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : '');
         $('sampleNote').textContent = m.result.sampled ? 'Showing a sample of the file.' : '';
         renderNav(); renderSchema(); send('page', { offset: 0, limit: 200, sortBy: null, sortDir: null });
-      } else if (m.type === 'page') { mode === 'array' ? renderArrayGrid(m.result) : renderTable(m.result.rows); }
-      else if (m.type === 'profile') { mode === 'array' ? renderArrayInspector(m.result) : renderInspector(Object.assign({ column: selected }, m.result)); }
+      } else if (m.type === 'page') { (mode === 'array' || mode === 'hierarchical') ? renderArrayGrid(m.result) : renderTable(m.result.rows); }
+      else if (m.type === 'profile') { (mode === 'array' || mode === 'hierarchical') ? renderArrayInspector(m.result) : renderInspector(Object.assign({ column: selected }, m.result)); }
       else if (m.type === 'raw') { $('raw').textContent = JSON.stringify(m.result.json, null, 2); }
       else if (m.type === 'error') { $('status').textContent = 'Error: ' + m.error; }
     });

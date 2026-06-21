@@ -26,3 +26,7 @@ export function formatShape(shape: number[]): string {
   if (!shape || shape.length === 0) return '()';
   return shape.join(' × ');
 }
+
+export function treeIndent(depth: number): number {
+  return 6 + depth * 12;
+}
