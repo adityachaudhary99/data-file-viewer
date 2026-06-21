@@ -55,6 +55,17 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
 
     const sub = panel.webview.onDidReceiveMessage(async (msg) => {
       try {
+        if (msg.type === 'exportCsv') {
+          const defaultUri = vscode.Uri.file(
+            path.join(path.dirname(document.uri.fsPath), msg.suggestedName || 'export.csv'),
+          );
+          const target = await vscode.window.showSaveDialog({ defaultUri, filters: { CSV: ['csv'] } });
+          if (target) {
+            await vscode.workspace.fs.writeFile(target, Buffer.from(msg.csv, 'utf8'));
+            panel.webview.postMessage({ type: 'status', text: 'Exported ' + path.basename(target.fsPath) });
+          }
+          return;
+        }
         if (msg.type === 'ready') {
           panel.webview.postMessage({ type: 'open', result: await session.open() });
           return;

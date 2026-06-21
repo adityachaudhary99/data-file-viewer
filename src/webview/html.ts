@@ -34,7 +34,8 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     <div class="tab" data-tab="profile">Profile</div>
     <div class="tab" data-tab="schema">Schema</div>
     <div class="tab" data-tab="raw">Raw</div>
-    <span class="note" style="margin-left:auto" id="status">${escapeHtml(fileName)}</span>
+    <button class="tab" id="exportBtn" style="margin-left:auto" title="Export current view to CSV">⤓ CSV</button>
+    <span class="note" id="status" style="margin-left:8px">${escapeHtml(fileName)}</span>
   </div>
   <div class="layout">
     <div class="nav" id="nav"></div>
@@ -52,6 +53,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     let columns = [], sortBy = null, sortDir = null, selected = null;
     let mode = 'tabular', members = [], selMember = null;
     let tree = [], selNode = null, selLabel = null;
+    let lastCols = [], lastRows = [];
     const $ = (id) => document.getElementById(id);
 
     function send(cmd, args) { vscode.postMessage({ type: 'request', cmd, args: args || {} }); }
@@ -64,6 +66,10 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       if (name === 'profile') renderProfileTab();
     }
     document.querySelectorAll('.tab').forEach((t) => t.onclick = () => showTab(t.dataset.tab));
+    $('exportBtn').onclick = () => {
+      if (!lastCols.length) return;
+      vscode.postMessage({ type: 'exportCsv', csv: toCsv(lastCols, lastRows), suggestedName: csvName(fileName) });
+    };
 
     function renderNav() {
       $('nav').innerHTML = '';
@@ -80,6 +86,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
         columns.map((c) => '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.dtype) + '</td></tr>').join('') + '</table>';
     }
     function renderTable(rows) {
+      lastCols = columns.map((c) => c.name); lastRows = rows;
       const head = '<tr>' + columns.map((c) => '<th data-c="' + esc(c.name) + '">' + esc(c.name) +
         (c.name === sortBy ? (sortDir === 'desc' ? ' ▼' : ' ▲') : '') + '</th>').join('') + '</tr>';
       const body = rows.map((r) => '<tr>' + r.map((v) =>
@@ -133,6 +140,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
           '</td><td>' + esc(fmtShape(mem.shape)) + '</td><td>' + mem.size + '</td></tr>').join('') + '</table>';
     }
     function renderArrayGrid(res) {
+      lastCols = res.columns; lastRows = res.rows;
       const notes = [];
       if (res.sliced) notes.push('N-D array — showing slice ' + res.sliceLabel);
       if (res.colsTruncated) notes.push('columns truncated to ' + res.columns.length + ' of ' + res.colCount);
@@ -188,6 +196,9 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     }
     function fmt(v){ if(v===null||v===undefined||Number.isNaN(v))return '—'; return Number.isInteger(v)?String(v):Number(v.toPrecision(4)).toString(); }
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function csvField(v){ if(v===null||v===undefined)return ''; const s=String(v); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+    function toCsv(cols, rows){ const lines=[cols.map(csvField).join(',')]; for(const r of rows) lines.push(r.map(csvField).join(',')); return lines.join('\r\n'); }
+    function csvName(fn){ const dot=fn.lastIndexOf('.'); return (dot>0?fn.slice(0,dot):fn)+'.csv'; }
 
     window.addEventListener('message', (e) => {
       const m = e.data;
@@ -197,6 +208,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
           document.querySelector('.nav').classList.add('hidden');
           document.querySelector('.insp').classList.add('hidden');
           $('status').textContent = fileName + ' — object (Raw view)';
+          $('exportBtn').classList.add('hidden');
           showTab('raw');           // showTab already sends rawJson
           return;
         }
@@ -225,6 +237,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       } else if (m.type === 'page') { (mode === 'array' || mode === 'hierarchical') ? renderArrayGrid(m.result) : renderTable(m.result.rows); }
       else if (m.type === 'profile') { (mode === 'array' || mode === 'hierarchical') ? renderArrayInspector(m.result) : renderInspector(Object.assign({ column: selected }, m.result)); }
       else if (m.type === 'raw') { $('raw').textContent = JSON.stringify(m.result.json, null, 2); }
+      else if (m.type === 'status') { $('status').textContent = m.text; }
       else if (m.type === 'error') { $('status').textContent = 'Error: ' + m.error; }
     });
     vscode.postMessage({ type: 'ready' });

@@ -30,3 +30,8 @@ export function formatShape(shape: number[]): string {
 export function treeIndent(depth: number): number {
   return 6 + depth * 12;
 }
+
+export function csvFileName(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return (dot > 0 ? name.slice(0, dot) : name) + '.csv';
+}
