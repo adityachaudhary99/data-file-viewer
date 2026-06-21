@@ -125,3 +125,39 @@ def test_array_rawjson_summary():
     j = r["result"]["json"]
     assert j["file_type"] == "npy"
     assert j["members"][0]["preview"] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+def test_open_h5_is_hierarchical_tree():
+    [r] = _run_on("sample.h5", [{"id": 1, "cmd": "open"}])
+    res = r["result"]
+    assert res["shapeKind"] == "hierarchical"
+    paths = [(n["path"], n["kind"]) for n in res["tree"]]
+    assert paths == [("/grp", "group"), ("/grp/values", "leaf"),
+                     ("/ids", "leaf"), ("/labels", "leaf")]
+
+
+def test_h5_page_and_profile_select_node_via_column():
+    rs = _run_on("sample.h5", [
+        {"id": 1, "cmd": "page", "column": "/grp/values", "offset": 0, "limit": 100},
+        {"id": 2, "cmd": "profile", "column": "/ids"},
+    ])
+    by = {r["id"]: r for r in rs}
+    assert by[1]["result"]["rowCount"] == 3 and by[1]["result"]["colCount"] == 4
+    assert by[2]["result"]["kind"] == "numeric" and by[2]["result"]["max"] == 4
+
+
+def test_nc_open_and_mat_open_are_hierarchical():
+    [a] = _run_on("sample.nc", [{"id": 1, "cmd": "open"}])
+    assert a["result"]["shapeKind"] == "hierarchical"
+    assert any(n["path"] == "/region/rid" for n in a["result"]["tree"])
+    [b] = _run_on("sample.mat", [{"id": 1, "cmd": "open"}])
+    assert b["result"]["shapeKind"] == "hierarchical"
+    assert any(n["path"] == "/params" and n["kind"] == "group" for n in b["result"]["tree"])
+
+
+def test_h5_rawjson_summary():
+    [r] = _run_on("sample.h5", [{"id": 1, "cmd": "rawJson"}])
+    j = r["result"]["json"]
+    assert j["file_type"] == "h5"
+    by = {n["path"]: n for n in j["nodes"]}
+    assert by["/ids"]["preview"] == [0, 1, 2, 3, 4]

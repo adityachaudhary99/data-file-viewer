@@ -8,6 +8,7 @@ from python.classify import classify
 from python.loaders.tabular import load_tabular, columns_meta
 from python.loaders.objects import load_auto
 from python.loaders.arrays import load_arrays, member_meta, array_page, array_profile, array_raw
+from python.loaders.hierarchical import load_hier, node_arr, hier_raw
 from python.paging import page as page_df
 from python.profiler import profile_column
 from python.jsonsafe import to_jsonable
@@ -19,11 +20,12 @@ RAW_LIMIT = 1000
 class Session:
     def __init__(self, path: str):
         self.path = path
-        self.kind = classify(path)          # "tabular" | "array" | "auto"
+        self.kind = classify(path)          # "tabular" | "array" | "hierarchical" | "auto"
         self._table = None
         self._obj_json = None
         self._arrays = None
-        self.shape_kind = None              # resolved at open: "tabular" | "object" | "array"
+        self._hier = None
+        self.shape_kind = None              # "tabular" | "object" | "array" | "hierarchical"
 
     def _ensure_loaded(self):
         if self.shape_kind is not None:
@@ -34,6 +36,9 @@ class Session:
         elif self.kind == "array":
             self._arrays = load_arrays(self.path)
             self.shape_kind = "array"
+        elif self.kind == "hierarchical":
+            self._hier = load_hier(self.path)
+            self.shape_kind = "hierarchical"
         else:  # auto
             a = load_auto(self.path, MAX_ROWS)
             self.shape_kind = a.kind
@@ -47,6 +52,9 @@ class Session:
                 return m.arr
         return members[0].arr
 
+    def _node_arr(self, name):
+        return node_arr(self._hier, name)
+
     def handle(self, req: dict) -> dict:
         cmd = req.get("cmd")
         if cmd == "open":
@@ -56,6 +64,10 @@ class Session:
             if self.shape_kind == "array":
                 return {"shapeKind": "array",
                         "members": [dict(name=m.name, **member_meta(m.arr)) for m in self._arrays.members],
+                        "fileMeta": {"name": os.path.basename(self.path)}}
+            if self.shape_kind == "hierarchical":
+                return {"shapeKind": "hierarchical",
+                        "tree": self._hier.nodes,
                         "fileMeta": {"name": os.path.basename(self.path)}}
             t = self._table
             return {"shapeKind": "tabular", "columns": columns_meta(t.df),
@@ -75,6 +87,16 @@ class Session:
             if cmd == "rawJson":
                 return {"json": array_raw(self._arrays, self.path)}
             raise ValueError(f"command {cmd!r} not available for array files")
+        if self.shape_kind == "hierarchical":
+            # node path rides on the `column` request field (no RPC change)
+            if cmd == "page":
+                return array_page(self._node_arr(req.get("column")),
+                                  req.get("offset", 0), req.get("limit", 200))
+            if cmd == "profile":
+                return array_profile(self._node_arr(req.get("column")))
+            if cmd == "rawJson":
+                return {"json": hier_raw(self._hier, self.path)}
+            raise ValueError(f"command {cmd!r} not available for hierarchical files")
         # tabular commands (unchanged)
         if cmd == "page":
             return page_df(self._table.df, req.get("offset", 0), req.get("limit", 100),
