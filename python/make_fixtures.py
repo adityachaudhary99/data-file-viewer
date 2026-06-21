@@ -33,6 +33,40 @@ def make_array_fixtures(fixture_dir: str) -> None:
     print("wrote npy/npz array fixtures")
 
 
+def make_hier_fixtures(fixture_dir: str) -> None:
+    import numpy as np
+    import h5py
+    from netCDF4 import Dataset
+    from scipy.io import savemat
+
+    # --- HDF5: root datasets + one group with a NaN-bearing 2-D dataset ---
+    with h5py.File(os.path.join(fixture_dir, "sample.h5"), "w") as f:
+        f.create_dataset("ids", data=np.arange(5, dtype="int64"))
+        f.create_dataset("labels", data=np.array([b"alpha", b"beta", b"gamma"]))
+        grp = f.create_group("grp")
+        vals = np.arange(12, dtype="float64").reshape(3, 4)
+        vals[0, 0] = np.nan
+        grp.create_dataset("values", data=vals)
+
+    # --- NetCDF4: two root variables + one nested group with a variable ---
+    nc = Dataset(os.path.join(fixture_dir, "sample.nc"), "w", format="NETCDF4")
+    nc.createDimension("t", 4)
+    nc.createVariable("temp", "f8", ("t",))[:] = np.array([10.0, 11.5, 9.0, 12.0])
+    nc.createVariable("pressure", "f8", ("t",))[:] = np.array([101.0, 100.5, 102.0, 99.5])
+    region = nc.createGroup("region")
+    region.createDimension("r", 3)
+    region.createVariable("rid", "i4", ("r",))[:] = np.array([1, 2, 3])
+    nc.close()
+
+    # --- MATLAB v5: two arrays + one struct (-> group) with numeric fields ---
+    savemat(os.path.join(fixture_dir, "sample.mat"), {
+        "matrix": np.arange(6, dtype="float64").reshape(2, 3),
+        "vector": np.arange(4, dtype="int32"),
+        "params": {"a": np.float64(3.5), "b": np.arange(3, dtype="float64")},
+    })
+    print("wrote h5/nc/mat hierarchical fixtures")
+
+
 def main() -> None:
     os.makedirs(FIXTURE_DIR, exist_ok=True)
     df = make_sample_dataframe()
@@ -98,6 +132,7 @@ def main() -> None:
     print("wrote avro + pickle/joblib/msgpack fixtures")
 
     make_array_fixtures(FIXTURE_DIR)
+    make_hier_fixtures(FIXTURE_DIR)
 
 
 if __name__ == "__main__":

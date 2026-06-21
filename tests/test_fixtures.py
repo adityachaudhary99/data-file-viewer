@@ -47,3 +47,9 @@ ARRAY_FIXTURES = ["arr_2d.npy", "arr_1d.npy", "arr_3d.npy", "arr_scalar.npy", "a
 def test_array_fixture_exists(name):
     path = os.path.join(os.path.dirname(__file__), "fixtures", name)
     assert os.path.exists(path) and os.path.getsize(path) > 0
+
+
+@pytest.mark.parametrize("name", ["sample.h5", "sample.nc", "sample.mat"])
+def test_hier_fixture_exists(name):
+    path = os.path.join(os.path.dirname(__file__), "fixtures", name)
+    assert os.path.exists(path) and os.path.getsize(path) > 0
