@@ -1,8 +1,8 @@
 {
   "name": "data-file-viewer",
   "displayName": "Data File Viewer",
-  "description": "View and explore binary data files (.pkl, .h5, .parquet, .feather, .joblib, .npy, .npz, .msgpack, .arrow, .avro, .nc, .mat)",
-  "version": "1.0.5",
+  "description": "Interactive explorer & profiler for binary data files (.pkl, .h5, .parquet, .feather, .joblib, .npy, .npz, .msgpack, .arrow, .avro, .nc, .mat): sortable tables, array grids, hierarchical trees, per-column/array profiling, and a Raw JSON view.",
+  "version": "2.0.0",
   "publisher": "thecalendre",
   "icon": "icon.png",
   "engines": {

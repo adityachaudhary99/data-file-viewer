@@ -5,7 +5,9 @@ All notable changes to the "Data File Viewer" extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+**v2.0.0** marks the release of the interactive explorer & profiler — sortable tables, array grids, hierarchical trees, per-column/array profiling, CSV export, with the original JSON view preserved as the Raw tab.
+
+## [2.0.0] - 2026-06-21
 
 ### Added
 - Interactive explorer for `.parquet`: sortable/paginated table, per-column
@@ -23,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NaN/Inf counts, histogram), archive navigator for `.npz` members, and Raw summary
   tab. Arrays load with `allow_pickle=False` (object arrays are refused for safety).
   The legacy Raw-only NumPy viewer was removed. (Plan 4 of the v2 explorer.)
+- Interactive explorer for hierarchical files `.h5`/`.hdf5`, `.nc`/`.nc4`/`.netcdf`,
+  and `.mat`: a navigable tree of groups/datasets; selecting a dataset renders it
+  as a 2-D grid with the same per-array profile (shape, dtype, min/max/mean/std,
+  NaN/Inf, histogram) and a Raw tree summary. Files load binary data only (no code
+  execution). (Plan 5 of the v2 explorer.)
+- Export the current table/array/dataset view to CSV from the toolbar.
 
 ## [1.0.3] - 2026-01-17
 
@@ -143,5 +151,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/adityachaudhary99/data-file-viewer/compare/v1.0.0...HEAD
+[2.0.0]: https://github.com/adityachaudhary99/data-file-viewer/compare/v1.0.5...v2.0.0
+[Unreleased]: https://github.com/adityachaudhary99/data-file-viewer/compare/v2.0.0...HEAD
 [1.0.0]: https://github.com/adityachaudhary99/data-file-viewer/releases/tag/v1.0.0

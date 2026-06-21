@@ -2,6 +2,10 @@
 
 View and explore binary data files directly in VS Code (and compatible editors like Cursor).
 
+## What's New in 2.0
+
+The Data File Viewer is now an interactive explorer & profiler. Beyond the original JSON view, you now get sortable tables for tabular data, 2-D grids for arrays with profiling statistics (shape, dtype, min/max/mean/std, distribution histograms), hierarchical tree navigation for complex files (HDF5, NetCDF, MATLAB), and CSV export for your results. The original Raw JSON view is preserved as a tab for every file type.
+
 ## Supported File Types
 
 - **`.pkl` / `.pickle`** - Python Pickle files
