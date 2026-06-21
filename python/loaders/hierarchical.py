@@ -41,6 +41,54 @@ def _load_h5(path: str) -> LoadedHier:
     return LoadedHier(nodes, arrays)
 
 
+def _load_nc(path: str) -> LoadedHier:
+    from netCDF4 import Dataset
+    nodes: list = []
+    arrays: dict = {}
+
+    def walk(ds, prefix: str, depth: int):
+        for name in ds.variables:
+            p = prefix + "/" + name
+            arr = np.asarray(ds.variables[name][:])  # MaskedArray -> data (mask-fill best-effort)
+            arrays[p] = arr
+            nodes.append(_leaf_node(p, name, depth, arr))
+        for name in ds.groups:
+            p = prefix + "/" + name
+            nodes.append(_group_node(p, name, depth))
+            walk(ds.groups[name], p, depth + 1)
+
+    ds = Dataset(path, "r")
+    try:
+        walk(ds, "", 0)
+    finally:
+        ds.close()
+    return LoadedHier(nodes, arrays)
+
+
+def _load_mat(path: str) -> LoadedHier:
+    from scipy.io import loadmat
+    from scipy.io.matlab import mat_struct
+    nodes: list = []
+    arrays: dict = {}
+
+    def walk(items, prefix: str, depth: int):
+        for name, value in items:
+            p = prefix + "/" + name
+            if isinstance(value, mat_struct):
+                nodes.append(_group_node(p, name, depth))
+                fields = [(fn, getattr(value, fn)) for fn in value._fieldnames]
+                walk(fields, p, depth + 1)
+            else:
+                arr = np.asarray(value)
+                arrays[p] = arr
+                nodes.append(_leaf_node(p, name, depth, arr))
+
+    data = loadmat(path, squeeze_me=True, struct_as_record=False)
+    top = [(k, v) for k, v in data.items() if not k.startswith("__")]
+    walk(top, "", 0)
+    return LoadedHier(nodes, arrays)
+
+
 def load_hier(path: str) -> LoadedHier:
     """Load a hierarchical file into (pre-order node list, {leaf path: ndarray}).
 
@@ -50,6 +98,10 @@ def load_hier(path: str) -> LoadedHier:
     ext = os.path.splitext(path)[1].lower()
     if ext in (".h5", ".hdf5"):
         return _load_h5(path)
+    if ext in (".nc", ".nc4", ".netcdf"):
+        return _load_nc(path)
+    if ext == ".mat":
+        return _load_mat(path)
     raise ValueError(f"load_hier: unsupported extension {ext}")
 
 

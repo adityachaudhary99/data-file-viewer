@@ -34,3 +34,30 @@ def test_node_arr_resolves_and_falls_back():
     # unknown path -> first leaf in pre-order (/grp/values)
     first = node_arr(loaded, "/does/not/exist")
     assert first.shape == (3, 4)
+
+
+def test_nc_variables_then_groups():
+    loaded = load_hier(os.path.join(FX, "sample.nc"))
+    rows = [(n["path"], n["kind"], n["depth"]) for n in loaded.nodes]
+    # root variables first (creation order), then nested groups
+    assert rows == [
+        ("/temp", "leaf", 0),
+        ("/pressure", "leaf", 0),
+        ("/region", "group", 0),
+        ("/region/rid", "leaf", 1),
+    ]
+    assert loaded.arrays["/temp"].tolist() == [10.0, 11.5, 9.0, 12.0]
+    assert loaded.arrays["/region/rid"].tolist() == [1, 2, 3]
+
+
+def test_mat_arrays_and_struct_group():
+    loaded = load_hier(os.path.join(FX, "sample.mat"))
+    by = {n["path"]: n for n in loaded.nodes}
+    # struct "params" becomes a group; its fields become leaves
+    assert by["/params"]["kind"] == "group"
+    assert by["/params/a"]["kind"] == "leaf"
+    assert by["/params/b"]["shape"] == [3]
+    assert by["/matrix"]["shape"] == [2, 3]
+    assert by["/vector"]["shape"] == [4]
+    assert "/matrix" in loaded.arrays and "/params/b" in loaded.arrays
+    assert loaded.arrays["/matrix"].shape == (2, 3)
