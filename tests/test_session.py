@@ -161,3 +161,20 @@ def test_h5_rawjson_summary():
     assert j["file_type"] == "h5"
     by = {n["path"]: n for n in j["nodes"]}
     assert by["/ids"]["preview"] == [0, 1, 2, 3, 4]
+
+
+def test_node_arr_none_guard_returns_error(tmp_path):
+    import h5py
+    p = tmp_path / "empty.h5"
+    with h5py.File(str(p), "w") as f:
+        f.create_group("g")
+    # Use _run_on but with a tmp fixture - we need to use subprocess directly
+    proc = subprocess.run(
+        [sys.executable, SESSION, str(p)],
+        input=json.dumps({"id": 1, "cmd": "page"}) + "\n",
+        capture_output=True, text=True, cwd=ROOT, timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    replies = [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
+    assert len(replies) == 1
+    assert replies[0]["ok"] is False and replies[0]["error"]

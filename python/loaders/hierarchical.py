@@ -49,7 +49,11 @@ def _load_nc(path: str) -> LoadedHier:
     def walk(ds, prefix: str, depth: int):
         for name in ds.variables:
             p = prefix + "/" + name
-            arr = np.asarray(ds.variables[name][:])  # MaskedArray -> data (mask-fill best-effort)
+            raw = ds.variables[name][:]
+            if np.ma.isMaskedArray(raw) and raw.mask is not np.ma.nomask and raw.mask.any():
+                arr = np.ma.filled(raw.astype("float64"), np.nan)
+            else:
+                arr = np.asarray(raw)
             arrays[p] = arr
             nodes.append(_leaf_node(p, name, depth, arr))
         for name in ds.groups:
@@ -79,7 +83,8 @@ def _load_mat(path: str) -> LoadedHier:
                 fields = [(fn, getattr(value, fn)) for fn in value._fieldnames]
                 walk(fields, p, depth + 1)
             else:
-                arr = np.asarray(value)
+                import scipy.sparse as _sp
+                arr = value.toarray() if _sp.issparse(value) else np.asarray(value)
                 arrays[p] = arr
                 nodes.append(_leaf_node(p, name, depth, arr))
 
@@ -119,13 +124,10 @@ def hier_raw(loaded: "LoadedHier", path: str) -> dict:
     """Raw-tab summary: the full tree, with a small flat preview per leaf."""
     out_nodes = []
     for n in loaded.nodes:
-        entry = {"path": n["path"], "name": n["name"],
-                 "kind": n["kind"], "depth": n["depth"]}
+        entry = dict(n)
         if n["kind"] == "leaf":
             arr = loaded.arrays[n["path"]]
             flat = np.asarray(arr).ravel()
-            entry["shape"] = n["shape"]
-            entry["dtype"] = n["dtype"]
             entry["preview"] = [to_jsonable(v) for v in flat[:100]]
             entry["truncated"] = int(arr.size) > 100
         out_nodes.append(entry)

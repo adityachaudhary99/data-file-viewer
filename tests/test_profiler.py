@@ -45,3 +45,12 @@ def test_histogram_counts_sum_to_non_null_count():
 def test_histogram_empty_when_no_numeric_values():
     h = histogram(pd.Series([None, None, None]))
     assert h == {"edges": [], "counts": []}
+
+
+import json
+
+def test_profile_complex_column():
+    import json
+    p = profile_column(pd.Series([1+2j, 3+4j]))
+    assert p["kind"] == "categorical"
+    json.dumps(p)  # must not raise

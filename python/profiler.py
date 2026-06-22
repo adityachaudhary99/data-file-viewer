@@ -40,13 +40,17 @@ def profile_column(series: pd.Series) -> dict:
         non_null_bool = series.dropna()
         out["trueCount"] = int(non_null_bool.sum())
         out["falseCount"] = int((~non_null_bool).sum())
+    elif pd.api.types.is_complex_dtype(series):
+        out["kind"] = "categorical"
+        vc = series.astype(str).value_counts(dropna=True).head(10)
+        out["top"] = [{"value": k, "count": int(v)} for k, v in vc.items()]
     elif pd.api.types.is_numeric_dtype(series):
         out["kind"] = "numeric"
         desc = series.describe()
-        out["min"] = to_jsonable(series.min())
-        out["max"] = to_jsonable(series.max())
-        out["mean"] = to_jsonable(series.mean())
-        out["std"] = to_jsonable(series.std())
+        out["min"] = to_jsonable(desc.get("min"))
+        out["max"] = to_jsonable(desc.get("max"))
+        out["mean"] = to_jsonable(desc.get("mean"))
+        out["std"] = to_jsonable(desc.get("std"))
         out["q25"] = to_jsonable(desc.get("25%"))
         out["q50"] = to_jsonable(desc.get("50%"))
         out["q75"] = to_jsonable(desc.get("75%"))

@@ -39,7 +39,7 @@ def load_auto(path: str, max_rows: int = 200_000) -> AutoLoaded:
         import msgpack
         with open(path, "rb") as f:
             obj = msgpack.unpack(f, raw=False, strict_map_key=False)
-        if isinstance(obj, list) and obj and all(isinstance(r, dict) for r in obj):
+        if isinstance(obj, list) and all(isinstance(r, dict) for r in obj):
             return _as_tabular(pd.DataFrame(obj), max_rows)
         return AutoLoaded("object", None, {"file_type": "msgpack", "data": _mp_to_json(obj)})
     raise ValueError(f"load_auto: unsupported extension {ext}")

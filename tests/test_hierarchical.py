@@ -83,3 +83,28 @@ def test_hier_raw_lists_nodes_with_leaf_previews():
     assert by["/ids"]["preview"] == [0, 1, 2, 3, 4]
     assert by["/ids"]["truncated"] is False
     assert by["/grp/values"]["preview"][0] is None   # NaN -> null via to_jsonable
+
+
+def test_nc_masked_fill_becomes_nan(tmp_path):
+    from netCDF4 import Dataset
+    p = tmp_path / "m.nc"
+    ds = Dataset(str(p), "w")
+    ds.createDimension("x", 3)
+    v = ds.createVariable("t", "f8", ("x",), fill_value=9.0e36)
+    v[:] = np.ma.array([1.0, 2.0, 3.0], mask=[False, True, False])
+    ds.close()
+    loaded = load_hier(str(p))
+    arr = node_arr(loaded, "/t")
+    assert np.isnan(arr[1]) and arr[0] == 1.0 and arr[2] == 3.0
+
+def test_mat_sparse_densifies(tmp_path):
+    import json
+    import scipy.sparse as sp
+    from scipy.io import savemat
+    from python.loaders.arrays import array_page
+    p = tmp_path / "s.mat"
+    savemat(str(p), {"s": sp.csr_matrix(np.array([[1.0, 0.0], [0.0, 2.0]]))})
+    loaded = load_hier(str(p))
+    arr = node_arr(loaded, "/s")
+    assert arr.shape == (2, 2) and arr[1, 1] == 2.0
+    json.dumps(array_page(arr))  # must not raise

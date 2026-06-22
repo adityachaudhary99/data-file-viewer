@@ -50,10 +50,15 @@ class Session:
         for m in members:
             if m.name == name:
                 return m.arr
+        if not members:
+            raise ValueError("archive has no arrays")
         return members[0].arr
 
     def _node_arr(self, name):
-        return node_arr(self._hier, name)
+        arr = node_arr(self._hier, name)
+        if arr is None:
+            raise ValueError("file has no displayable dataset")
+        return arr
 
     def handle(self, req: dict) -> dict:
         cmd = req.get("cmd")
@@ -99,7 +104,7 @@ class Session:
             raise ValueError(f"command {cmd!r} not available for hierarchical files")
         # tabular commands (unchanged)
         if cmd == "page":
-            return page_df(self._table.df, req.get("offset", 0), req.get("limit", 100),
+            return page_df(self._table.df, req.get("offset", 0), req.get("limit", 200),
                            req.get("sortBy"), req.get("sortDir"))
         if cmd == "profile":
             return profile_column(self._table.df[req["column"]])
@@ -111,7 +116,7 @@ class Session:
                              "rows": self._table.total,
                              "shown": len(data),
                              "truncated": self._table.total > len(data),
-                             "columns": [c["name"] for c in columns_meta(self._table.df)],
+                             "columns": [str(c) for c in self._table.df.columns],
                              "data": data}}
         raise ValueError(f"unknown command: {cmd!r}")
 

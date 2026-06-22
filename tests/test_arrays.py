@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pytest
 from python.loaders.arrays import load_arrays, member_meta
 
 FX = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -120,3 +119,19 @@ def test_array_raw_previews_members():
     assert [m["name"] for m in raw["members"]] == ["x", "y"]
     assert raw["members"][0]["preview"] == [0, 1, 2, 3, 4, 5]
     assert raw["members"][0]["truncated"] is False
+
+
+from python.loaders.arrays import array_page, array_profile
+
+def test_array_page_complex_json_safe(tmp_path):
+    import json
+    p = tmp_path / "c.npy"
+    np.save(str(p), np.array([1+2j, 3-4j], dtype=np.complex128))
+    loaded = load_arrays(str(p))
+    res = array_page(loaded.members[0].arr)
+    json.dumps(res)  # must not raise
+    assert isinstance(res["rows"][0][0], str) and "j" in res["rows"][0][0]
+
+def test_array_profile_bins_forwarded():
+    result = array_profile(np.arange(100.0), bins=5)
+    assert len(result["histogram"]["counts"]) == 5

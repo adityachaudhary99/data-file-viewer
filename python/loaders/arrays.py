@@ -84,7 +84,7 @@ def array_profile(arr, bins: int = 20) -> dict:
         out["std"] = to_jsonable(finite.std())
     else:
         out["min"] = out["max"] = out["mean"] = out["std"] = None
-    out["histogram"] = histogram(pd.Series(finite))
+    out["histogram"] = histogram(pd.Series(finite), bins)
     return out
 
 

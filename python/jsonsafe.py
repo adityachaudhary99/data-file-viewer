@@ -10,6 +10,12 @@ def to_jsonable(value):
         return bytes(value).decode("utf-8", "replace")
     if isinstance(value, np.generic):
         value = value.item()
+    if isinstance(value, complex):
+        r = value.real if math.isfinite(value.real) else None
+        i = value.imag if math.isfinite(value.imag) else None
+        rs = "nan" if r is None else f"{r:g}"
+        isn = "nan" if i is None else f"{i:+g}"
+        return f"{rs}{isn}j"
     if isinstance(value, float):
         return value if math.isfinite(value) else None
     try:
