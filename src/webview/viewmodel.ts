@@ -4,10 +4,11 @@ export function scaleHistogram(counts: number[], maxPx: number): number[] {
   return counts.map((c) => Math.round((c / max) * maxPx));
 }
 
-export function formatStat(v: number | null): string {
-  if (v === null || v === undefined || Number.isNaN(v)) return '—';
-  if (Number.isInteger(v)) return String(v);
-  return Number(v.toPrecision(4)).toString();
+export function formatStat(v: unknown): string {
+  if(v===null||v===undefined) return '—';
+  if(typeof v!=='number') return String(v);
+  if(Number.isNaN(v as number)) return '—';
+  return Number.isInteger(v as number) ? String(v) : Number((v as number).toPrecision(4)).toString();
 }
 
 function csvField(value: unknown): string {

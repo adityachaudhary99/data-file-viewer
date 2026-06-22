@@ -130,6 +130,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       });
     }
     function selectMember(name) {
+      lastCols = []; lastRows = [];
       selMember = name; selLabel = name; renderMemberNav();
       send('page', { column: name, offset: 0, limit: 200 });
       send('profile', { column: name });
@@ -179,6 +180,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       });
     }
     function selectNode(path) {
+      lastCols = []; lastRows = [];
       selNode = path; selLabel = path; renderTreeNav();
       send('page', { column: path, offset: 0, limit: 200 });
       send('profile', { column: path });
@@ -194,7 +196,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       const max = Math.max(1, ...counts);
       return '<div class="hist">' + counts.map((c) => '<i style="height:' + Math.round(c/max*60) + 'px"></i>').join('') + '</div>';
     }
-    function fmt(v){ if(v===null||v===undefined||Number.isNaN(v))return '—'; return Number.isInteger(v)?String(v):Number(v.toPrecision(4)).toString(); }
+    function fmt(v){ if(v===null||v===undefined)return '—'; if(typeof v!=='number')return String(v); if(Number.isNaN(v))return '—'; return Number.isInteger(v)?String(v):Number(v.toPrecision(4)).toString(); }
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function csvField(v){ if(v===null||v===undefined)return ''; const s=String(v); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
     function toCsv(cols, rows){ const lines=[cols.map(csvField).join(',')]; for(const r of rows) lines.push(r.map(csvField).join(',')); return lines.join('\r\n'); }

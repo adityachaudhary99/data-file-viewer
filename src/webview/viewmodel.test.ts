@@ -34,3 +34,16 @@ test('csvFileName swaps the extension for .csv', () => {
   assert.strictEqual(csvFileName('a.b.h5'), 'a.b.csv');
   assert.strictEqual(csvFileName('noext'), 'noext.csv');
 });
+
+test('formatStat returns em-dash for null, undefined, NaN', () => {
+  assert.equal(formatStat(null), '—');
+  assert.equal(formatStat(undefined as unknown as number), '—');
+  assert.equal(formatStat(NaN), '—');
+});
+test('formatStat returns string for non-number input', () => {
+  assert.equal(formatStat('abc' as unknown as number), 'abc');
+});
+test('formatStat formats integers and 4-sig-fig floats', () => {
+  assert.equal(formatStat(5), '5');
+  assert.equal(formatStat(3.14159), '3.142');
+});

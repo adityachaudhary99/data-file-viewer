@@ -143,12 +143,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Add diff view for comparing files
 - [ ] Performance improvements for very large files (streaming)
 
-### [2.0.0] - Future
-- [ ] Add support for more formats (Zarr, TFRecord, etc.)
-- [ ] Interactive data exploration
-- [ ] Edit support for some formats
-- [ ] Cloud file support (S3, GCS, Azure)
-
 ---
 
 [2.0.0]: https://github.com/adityachaudhary99/data-file-viewer/compare/v1.0.5...v2.0.0

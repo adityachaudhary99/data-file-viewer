@@ -39,7 +39,6 @@
     "onCustomEditor:dataFileViewer.feather",
     "onCustomEditor:dataFileViewer.joblib",
     "onCustomEditor:dataFileViewer.npy",
-    "onCustomEditor:dataFileViewer.npz",
     "onCustomEditor:dataFileViewer.msgpack",
     "onCustomEditor:dataFileViewer.arrow",
     "onCustomEditor:dataFileViewer.avro",
