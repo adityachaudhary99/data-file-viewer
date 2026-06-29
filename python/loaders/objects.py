@@ -23,8 +23,8 @@ def _as_tabular(df: pd.DataFrame, max_rows: int) -> AutoLoaded:
 
 def load_auto(path: str, max_rows: int = 200_000) -> AutoLoaded:
     ext = os.path.splitext(path)[1].lower()
-    if ext in (".pkl", ".pickle", ".joblib"):
-        if ext == ".joblib":
+    if ext in (".pkl", ".pickle", ".joblib", ".jl"):
+        if ext in (".joblib", ".jl"):
             import joblib
             obj = joblib.load(path)
         else:

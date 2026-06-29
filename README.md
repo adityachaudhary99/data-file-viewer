@@ -12,9 +12,9 @@ The Data File Viewer is now an interactive explorer & profiler. Beyond the origi
 - **`.h5` / `.hdf5`** - HDF5 files
 - **`.parquet`** - Apache Parquet files
 - **`.feather`** - Apache Feather files
-- **`.joblib`** - Scikit-learn Joblib files
+- **`.joblib` / `.jl`** - Scikit-learn Joblib files
 - **`.npy` / `.npz`** - NumPy array files
-- **`.msgpack`** - MessagePack files
+- **`.msgpack` / `.mp`** - MessagePack files
 - **`.arrow`** - Apache Arrow files
 - **`.avro`** - Apache Avro files
 - **`.nc` / `.nc4`** - NetCDF files

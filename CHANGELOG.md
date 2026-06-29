@@ -31,6 +31,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NaN/Inf, histogram) and a Raw tree summary. Files load binary data only (no code
   execution). (Plan 5 of the v2 explorer.)
 - Export the current table/array/dataset view to CSV from the toolbar.
+- `.jl` as a Joblib file alias.
+
+### Changed
+- Refined the custom viewer UI with a VS Code-native topbar, navigator metadata,
+  denser data grids, grouped profile stats, cleaner Raw-only mode, and responsive
+  side-panel behavior.
+- Added repository line-ending rules with `.gitattributes`.
+
+### Fixed
+- `.jl` files now classify and load through the Joblib/object loader instead of
+  being registered only in the VS Code selector.
+- `.jl` files now receive the same trust warning as `.joblib` files.
+- Generated webview JavaScript is covered by a parse test to catch inline-script
+  escaping regressions.
 
 ## [1.0.3] - 2026-01-17
 

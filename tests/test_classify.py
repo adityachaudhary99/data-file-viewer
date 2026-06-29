@@ -21,7 +21,7 @@ def test_avro_is_tabular():
 
 
 def test_object_family_is_auto():
-    for ext in [".pkl", ".pickle", ".joblib", ".msgpack", ".mp"]:
+    for ext in [".pkl", ".pickle", ".joblib", ".jl", ".msgpack", ".mp"]:
         assert classify("/x/d" + ext) == "auto"
 
 

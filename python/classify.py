@@ -21,6 +21,7 @@ _EXT_TO_KIND = {
     ".pkl": "auto",
     ".pickle": "auto",
     ".joblib": "auto",
+    ".jl": "auto",
     ".msgpack": "auto",
     ".mp": "auto",
 }

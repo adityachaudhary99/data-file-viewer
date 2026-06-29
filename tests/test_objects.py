@@ -1,4 +1,5 @@
 import os
+import shutil
 from python.loaders.objects import load_auto
 from python.loaders.tabular import columns_meta
 
@@ -12,6 +13,12 @@ def test_dataframe_pickle_is_tabular():
 
 def test_dataframe_joblib_is_tabular():
     a = load_auto(os.path.join(BASE, "sample_df.joblib"))
+    assert a.kind == "tabular" and a.table.total == 10
+
+def test_dataframe_jl_alias_is_tabular(tmp_path):
+    p = tmp_path / "sample_df.jl"
+    shutil.copyfile(os.path.join(BASE, "sample_df.joblib"), p)
+    a = load_auto(str(p))
     assert a.kind == "tabular" and a.table.total == 10
 
 def test_record_list_msgpack_is_tabular():

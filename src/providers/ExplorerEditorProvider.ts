@@ -4,6 +4,7 @@ import * as path from 'path';
 import { DataSession, PageArgs } from '../backend/DataSession';
 import { PythonEnv } from '../backend/PythonEnv';
 import { getExplorerHtml } from '../webview/html';
+import { requiresTrustWarning } from './fileSafety';
 
 export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = 'dataFileViewer.parquet';
@@ -26,7 +27,7 @@ export class ExplorerEditorProvider implements vscode.CustomReadonlyEditorProvid
     panel.webview.options = { enableScripts: true };
 
     const ext = path.extname(document.uri.fsPath).toLowerCase();
-    if (ext === '.pkl' || ext === '.pickle' || ext === '.joblib') {
+    if (requiresTrustWarning(ext)) {
       const choice = await vscode.window.showWarningMessage(
         'Opening a pickle/joblib file executes Python code during deserialization. Only open files you trust.',
         { modal: true }, 'Open Anyway',

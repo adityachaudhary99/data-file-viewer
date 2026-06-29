@@ -1,0 +1,29 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pkl binary
+*.pickle binary
+*.joblib binary
+*.jl binary
+*.h5 binary
+*.hdf5 binary
+*.parquet binary
+*.feather binary
+*.arrow binary
+*.avro binary
+*.npy binary
+*.npz binary
+*.msgpack binary
+*.mp binary
+*.nc binary
+*.nc4 binary
+*.netcdf binary
+*.mat binary
