@@ -3,8 +3,14 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as https from 'https';
 
 const execAsync = promisify(exec);
+
+const DISTRO_PIP_HINT =
+    'On Debian/Ubuntu (including WSL) the system Python ships without pip/ensurepip ' +
+    'packaging tools. Fix with: sudo apt install python3-venv python3-pip  -  or select ' +
+    'a pyenv/conda-managed Python, then reload VS Code and retry.';
 
 export class PythonRunner {
     private static pythonPath: string | null = null;
@@ -90,7 +96,12 @@ export class PythonRunner {
                 await execAsync(`${systemPython} -m venv "${venvPath}"`, {
                     timeout: 60000 // 1 minute
                 });
-            } catch (error) {
+            } catch (error: any) {
+                const detail = String(error?.stderr || error?.message || error);
+                // Debian/Ubuntu without python3-venv fails venv creation outright
+                if (/ensurepip|venv/i.test(detail)) {
+                    throw new Error(`Failed to create virtual environment: ${detail}\n\n${DISTRO_PIP_HINT}`);
+                }
                 throw new Error(`Failed to create virtual environment: ${error}`);
             }
         };
@@ -118,6 +129,91 @@ export class PythonRunner {
 
         // Ensure venv exists and return its Python
         return await this.ensureVenv();
+    }
+
+    private static async downloadGetPip(destPath: string): Promise<void> {
+        await new Promise<void>((resolve, reject) => {
+            const request = (url: string, redirectsLeft: number = 5) => {
+                https.get(url, (response) => {
+                    // Follow redirects (bootstrap.pypa.io may redirect)
+                    if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+                        response.resume();
+                        if (redirectsLeft <= 0) {
+                            reject(new Error('Too many redirects downloading get-pip.py'));
+                            return;
+                        }
+                        request(response.headers.location, redirectsLeft - 1);
+                        return;
+                    }
+                    if (response.statusCode !== 200) {
+                        response.resume();
+                        reject(new Error(`HTTP ${response.statusCode} downloading get-pip.py`));
+                        return;
+                    }
+                    const file = fs.createWriteStream(destPath);
+                    response.pipe(file);
+                    file.on('finish', () => file.close(() => resolve()));
+                    file.on('error', (err) => reject(err));
+                }).on('error', reject);
+            };
+            request('https://bootstrap.pypa.io/get-pip.py');
+        });
+    }
+
+    private static async hasPip(python: string): Promise<boolean> {
+        try {
+            await execAsync(`"${python}" -m pip --version`, { timeout: 15000 });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Guarantees pip is usable inside the venv.
+     * Debian/Ubuntu (incl. WSL) can create venvs without pip when the
+     * python3-venv package is missing (issue #1): the venv python exists but
+     * `python -m pip` fails with "No module named pip".
+     */
+    private static async ensurePipInVenv(python: string, progress?: (message: string) => void): Promise<void> {
+        if (await this.hasPip(python)) {
+            return;
+        }
+        console.log('Venv has no pip, bootstrapping...');
+
+        // Path 1: ensurepip (bundled with upstream CPython distributions)
+        try {
+            if (progress) progress('Bootstrapping pip (ensurepip)...');
+            await execAsync(`"${python}" -m ensurepip --upgrade`, { timeout: 120000 });
+            if (await this.hasPip(python)) {
+                console.log('pip bootstrapped via ensurepip');
+                return;
+            }
+        } catch (error) {
+            console.log('ensurepip unavailable (distro-patched Python often strips it):', error);
+        }
+
+        // Path 2: get-pip.py (covers distros that ship venv without ensurepip)
+        try {
+            if (progress) progress('Bootstrapping pip (get-pip.py)...');
+            const bootstrap = path.join(path.dirname(python), 'get-pip.py');
+            await this.downloadGetPip(bootstrap);
+            try {
+                await execAsync(`"${python}" "${bootstrap}"`, { timeout: 180000 });
+            } finally {
+                try { fs.unlinkSync(bootstrap); } catch { /* best effort */ }
+            }
+            if (await this.hasPip(python)) {
+                console.log('pip bootstrapped via get-pip.py');
+                return;
+            }
+        } catch (error) {
+            console.error('get-pip.py bootstrap failed:', error);
+        }
+
+        throw new Error(
+            'The Python environment has no pip and it could not be bootstrapped automatically. ' + DISTRO_PIP_HINT
+        );
     }
 
     static async checkAndInstallPackages(): Promise<boolean> {
@@ -251,12 +347,10 @@ export class PythonRunner {
                             python = await this.ensureVenv((msg) => progress.report({ increment: 10, message: msg }));
                         }
                         
-                        progress.report({ increment: 20, message: 'Upgrading pip...' });
-                        // Upgrade pip first
-                        await execAsync(`"${python}" -m pip install --upgrade pip`, {
-                            timeout: 60000
-                        });
-                        
+                        progress.report({ increment: 20, message: 'Preparing pip...' });
+                        // Guarantee pip exists in the venv (may be absent on WSL/Debian venvs - issue #1)
+                        await this.ensurePipInVenv(python, (msg) => progress.report({ increment: 5, message: msg }));
+
                         progress.report({ increment: 30, message: 'Installing packages...' });
                         // Install packages
                         await execAsync(`"${python}" -m pip install numpy pandas h5py pyarrow msgpack joblib avro-python3 python-snappy netCDF4 scipy`, {
