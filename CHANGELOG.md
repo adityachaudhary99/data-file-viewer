@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **v2.0.0** marks the release of the interactive explorer & profiler — sortable tables, array grids, hierarchical trees, per-column/array profiling, CSV export, with the original JSON view preserved as the Raw tab.
 
+## [2.0.1] - 2026-09-08
+
+### Fixed
+- Bootstrap pip into venvs that ship without it (WSL Ubuntu 26.04, #1):
+  try `ensurepip`, fall back to `get-pip.py`, and surface an actionable
+  `python3-venv`/`python3-pip` hint when bootstrap is impossible.
+
 ## [2.0.0] - 2026-06-21
 
 ### Added

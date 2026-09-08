@@ -2,7 +2,7 @@
   "name": "data-file-viewer",
   "displayName": "Data File Viewer",
   "description": "Interactive explorer & profiler for binary data files (.pkl, .h5, .parquet, .feather, .joblib/.jl, .npy, .npz, .msgpack/.mp, .arrow, .avro, .nc, .mat): sortable tables, array grids, hierarchical trees, per-column/array profiling, and a Raw JSON view.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "thecalendre",
   "icon": "icon.png",
   "engines": {
