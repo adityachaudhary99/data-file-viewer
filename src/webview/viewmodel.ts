@@ -13,7 +13,7 @@ export function formatStat(v: unknown): string {
 
 function csvField(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  const s = typeof value === 'object' ? JSON.stringify(value) : String(value);
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 

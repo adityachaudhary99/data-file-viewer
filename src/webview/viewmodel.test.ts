@@ -17,6 +17,10 @@ test('rowsToCsv quotes and escapes', () => {
   const csv = rowsToCsv(['a', 'b'], [['x,y', null], ['he said "hi"', 2]]);
   assert.equal(csv, 'a,b\r\n"x,y",\r\n"he said ""hi""",2');
 });
+test('rowsToCsv writes array and object cells as JSON', () => {
+  const csv = rowsToCsv(['v', 'o'], [[[0.1, 0.2], { a: 1 }]]);
+  assert.equal(csv, 'v,o\r\n"[0.1,0.2]","{""a"":1}"');
+});
 
 test('formatShape joins dims and renders scalar', () => {
   assert.strictEqual(formatShape([4, 3]), '4 × 3');

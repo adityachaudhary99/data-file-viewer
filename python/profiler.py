@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from python.jsonsafe import to_jsonable
+from python.jsonsafe import to_jsonable, as_hashable
 
 HIGH_NULL = 0.30
 HIGH_CARD_RATIO = 0.9
@@ -24,6 +24,7 @@ def _flags(nulls: int, total: int, unique: int) -> dict:
 
 
 def profile_column(series: pd.Series) -> dict:
+    series = as_hashable(series)
     total = int(len(series))
     nulls = int(series.isna().sum())
     unique = int(series.nunique(dropna=True))

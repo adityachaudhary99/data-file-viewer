@@ -54,3 +54,11 @@ def test_profile_complex_column():
     p = profile_column(pd.Series([1+2j, 3+4j]))
     assert p["kind"] == "categorical"
     json.dumps(p)  # must not raise
+
+
+def test_profile_list_column_counts_whole_arrays():
+    import numpy as np
+    p = profile_column(pd.Series([np.array([1, 2]), np.array([1, 2]), np.array([3, 4])], name="v"))
+    assert p["kind"] == "categorical"
+    assert p["unique"] == 2
+    assert p["top"][0] == {"value": [1, 2], "count": 2}

@@ -193,14 +193,31 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     min-height:0;
     overflow:auto;
     padding:10px;
+    display:flex;
+    flex-direction:column;
   }
   .view{min-width:0;}
+  /* Data and Raw scroll inside their .table-wrap, so its horizontal scrollbar
+     and the sticky header row stay in view instead of sitting below the last row. */
+  #view-data,#view-raw{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #view-data>.table-wrap,#view-raw>.table-wrap{flex:0 1 auto;min-height:0;}
   .notice{
     min-height:22px;
     margin:0 0 8px;
     color:var(--dfv-muted);
     font-size:12px;
   }
+  .data-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;min-height:22px;margin:0 0 8px;}
+  .data-bar .notice{flex:1 1 auto;min-height:0;margin:0;}
+  .pager{display:flex;align-items:center;gap:4px;margin-left:auto;color:var(--dfv-muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .pager .pg-range{margin-right:8px;}
+  .pager button,.pager input,.pager select{height:24px;font:inherit;font-size:12px;border-radius:4px;}
+  .pager button{min-width:26px;padding:0 6px;border:1px solid var(--dfv-border);background:transparent;color:var(--dfv-fg);cursor:pointer;}
+  .pager button:not(:disabled):hover{background:var(--dfv-hover);}
+  .pager button:disabled{opacity:.4;cursor:default;}
+  .pager input{width:60px;padding:0 4px;text-align:center;border:1px solid var(--vscode-input-border,var(--dfv-border));background:var(--vscode-input-background);color:var(--vscode-input-foreground);}
+  .pager select{margin-left:8px;padding:0 4px;border:1px solid var(--vscode-dropdown-border,var(--dfv-border));background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);}
+  .pager :focus-visible{outline:1px solid var(--dfv-focus);outline-offset:-1px;}
   .table-wrap{
     max-width:100%;
     overflow:auto;
@@ -238,9 +255,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
   th.idx,td.idx{
     position:sticky;
     left:0;
-    width:44px;
     min-width:44px;
-    max-width:44px;
     color:var(--dfv-muted);
     background:var(--dfv-raised);
     font-family:var(--vscode-editor-font-family);
@@ -377,7 +392,18 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     </aside>
     <main class="main" aria-label="Data preview">
       <section id="view-data" class="view">
-        <div class="notice" id="sampleNote">Loading preview...</div>
+        <div class="data-bar">
+          <div class="notice" id="sampleNote">Loading preview...</div>
+          <div class="pager hidden" id="pager">
+            <span class="pg-range" id="pgRange"></span>
+            <button type="button" id="pgFirst" title="First page" aria-label="First page">&laquo;</button>
+            <button type="button" id="pgPrev" title="Previous page" aria-label="Previous page">&lsaquo;</button>
+            <span>Page</span><input id="pgInput" type="number" min="1" value="1" aria-label="Page number"><span id="pgCount">/ 1</span>
+            <button type="button" id="pgNext" title="Next page" aria-label="Next page">&rsaquo;</button>
+            <button type="button" id="pgLast" title="Last page" aria-label="Last page">&raquo;</button>
+            <select id="pgSize" title="Rows per page" aria-label="Rows per page"><option value="100">100 / page</option><option value="200" selected>200 / page</option><option value="500">500 / page</option><option value="1000">1000 / page</option></select>
+          </div>
+        </div>
         <div class="empty hidden" id="dataEmpty"></div>
         <div class="table-wrap" id="tableWrap"><table id="tbl"></table></div>
       </section>
@@ -396,6 +422,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     let mode = 'tabular', members = [], selMember = null;
     let tree = [], selNode = null, selLabel = null;
     let lastCols = [], lastRows = [], currentProfileHtml = '';
+    let pageOffset = 0, pageSize = 200, pageTotal = 0;
     const $ = (id) => document.getElementById(id);
 
     function send(cmd, args) { vscode.postMessage({ type: 'request', cmd, args: args || {} }); }
@@ -457,6 +484,36 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       $('dataEmpty').classList.add('hidden');
       $('tableWrap').classList.remove('hidden');
     }
+    function requestPage(offset) {
+      pageOffset = Math.max(0, offset || 0);
+      if (mode === 'array') send('page', { column: selMember, offset: pageOffset, limit: pageSize });
+      else if (mode === 'hierarchical') send('page', { column: selNode, offset: pageOffset, limit: pageSize });
+      else send('page', { offset: pageOffset, limit: pageSize, sortBy, sortDir });
+    }
+    function pageCount() { return Math.max(1, Math.ceil(pageTotal / pageSize)); }
+    function goPage(n) {
+      n = Math.min(Math.max(1, Math.floor(Number(n)) || 1), pageCount());
+      requestPage((n - 1) * pageSize);
+    }
+    function updatePager(total, offset, shown) {
+      pageTotal = total || 0;
+      pageOffset = offset || 0;
+      const pages = pageCount(), cur = Math.floor(pageOffset / pageSize) + 1;
+      $('pager').classList.toggle('hidden', !pageTotal);
+      $('pgRange').textContent = shown ? 'Rows ' + (pageOffset + 1).toLocaleString() + '-' + (pageOffset + shown).toLocaleString() + ' of ' + pageTotal.toLocaleString() : '';
+      $('pgInput').value = String(cur);
+      $('pgInput').max = String(pages);
+      $('pgCount').textContent = '/ ' + pages.toLocaleString();
+      $('pgFirst').disabled = $('pgPrev').disabled = cur <= 1;
+      $('pgNext').disabled = $('pgLast').disabled = cur >= pages;
+      $('tableWrap').scrollTop = 0;
+    }
+    $('pgFirst').onclick = () => goPage(1);
+    $('pgPrev').onclick = () => goPage(Math.floor(pageOffset / pageSize));
+    $('pgNext').onclick = () => goPage(Math.floor(pageOffset / pageSize) + 2);
+    $('pgLast').onclick = () => goPage(pageCount());
+    $('pgInput').onchange = () => goPage($('pgInput').value);
+    $('pgSize').onchange = () => { pageSize = Number($('pgSize').value) || 200; goPage(Math.floor(pageOffset / pageSize) + 1); };
     function emptyHtml(title, body) {
       return '<div class="empty"><strong>' + esc(title) + '</strong><span>' + esc(body) + '</span></div>';
     }
@@ -467,7 +524,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     function valueHtml(v) {
       if (v === null || v === undefined) return '<span class="value-null">null</span>';
       if (typeof v === 'number' && !Number.isFinite(v)) return '<span class="value-special">' + esc(String(v)) + '</span>';
-      const s = String(v);
+      const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
       if (s === 'NaN' || s === 'Infinity' || s === '-Infinity') return '<span class="value-special">' + esc(s) + '</span>';
       return esc(s);
     }
@@ -493,9 +550,12 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       $('view-schema').innerHTML = tableWrap('<table><thead><tr><th>Column</th><th>Dtype</th></tr></thead><tbody>' +
         columns.map((c) => '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.dtype) + '</td></tr>').join('') + '</tbody></table>');
     }
-    function renderTable(rows) {
+    function renderTable(rows, res) {
+      res = res || {};
       lastCols = columns.map((c) => c.name); lastRows = rows || [];
       setExportEnabled();
+      const off = res.offset ?? pageOffset, idx = res.index;
+      updatePager(res.total ?? lastRows.length, off, lastRows.length);
       if (!columns.length || !lastRows.length) {
         $('tbl').innerHTML = '';
         showDataEmpty('No rows to preview', columns.length ? 'The current page is empty.' : 'This file did not expose tabular columns.');
@@ -506,7 +566,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
         const sort = c.name === sortBy ? '<span class="sort">' + (sortDir === 'desc' ? 'desc' : 'asc') + '</span>' : '';
         return '<th tabindex="0" data-c="' + esc(c.name) + '" title="Sort by ' + esc(c.name) + '">' + esc(c.name) + sort + '</th>';
       }).join('') + '</tr></thead>';
-      const body = '<tbody>' + lastRows.map((r, i) => '<tr><td class="idx">' + i + '</td>' + r.map((v) =>
+      const body = '<tbody>' + lastRows.map((r, i) => '<tr><td class="idx">' + (idx ? valueHtml(idx[i]) : off + i) + '</td>' + r.map((v) =>
         '<td>' + valueHtml(v) + '</td>').join('') + '</tr>').join('') + '</tbody>';
       $('tbl').innerHTML = head + body;
       $('tbl').querySelectorAll('th[data-c]').forEach((th) => {
@@ -516,7 +576,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     }
     function sortColumn(c) {
       if (sortBy === c) sortDir = sortDir === 'desc' ? 'asc' : 'desc'; else { sortBy = c; sortDir = 'asc'; }
-      send('page', { offset: 0, limit: 200, sortBy, sortDir });
+      requestPage(0);
     }
     function flagsHtml(flags) {
       if (!flags) return '';
@@ -573,7 +633,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     function selectMember(name) {
       lastCols = []; lastRows = []; setExportEnabled();
       selMember = name; selLabel = name; renderMemberNav();
-      send('page', { column: name, offset: 0, limit: 200 });
+      requestPage(0);
       send('profile', { column: name });
     }
     function renderArraySchema() {
@@ -584,10 +644,11 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     function renderArrayGrid(res) {
       lastCols = res.columns || []; lastRows = res.rows || [];
       setExportEnabled();
+      const off = res.offset ?? pageOffset;
+      updatePager(res.rowCount || 0, off, lastRows.length);
       const notes = [];
       if (res.sliced) notes.push('N-D array - showing slice ' + res.sliceLabel);
       if (res.colsTruncated) notes.push('columns truncated to ' + res.columns.length + ' of ' + res.colCount);
-      if (res.rowCount > res.rows.length) notes.push('showing first ' + res.rows.length + ' of ' + res.rowCount + ' rows');
       $('sampleNote').textContent = notes.join(' | ');
       if (!lastRows.length) {
         $('tbl').innerHTML = '';
@@ -596,7 +657,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
       }
       showDataTable();
       const head = '<thead><tr><th class="idx">#</th>' + res.columns.map((c) => '<th>' + esc(c) + '</th>').join('') + '</tr></thead>';
-      const body = '<tbody>' + res.rows.map((r, i) => '<tr><td class="idx">' + i + '</td>' + r.map((v) =>
+      const body = '<tbody>' + res.rows.map((r, i) => '<tr><td class="idx">' + (off + i) + '</td>' + r.map((v) =>
         '<td>' + valueHtml(v) + '</td>').join('') + '</tr>').join('') + '</tbody>';
       $('tbl').innerHTML = head + body;
     }
@@ -643,7 +704,7 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     function selectNode(path) {
       lastCols = []; lastRows = []; setExportEnabled();
       selNode = path; selLabel = path; renderTreeNav();
-      send('page', { column: path, offset: 0, limit: 200 });
+      requestPage(0);
       send('profile', { column: path });
     }
     function renderHierSchema() {
@@ -663,14 +724,14 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
     function fmt(v){ if(v===null||v===undefined)return '-'; if(typeof v!=='number')return String(v); if(Number.isNaN(v))return '-'; return Number.isInteger(v)?String(v):Number(v.toPrecision(4)).toString(); }
     function fmtPct(v){ return typeof v === 'number' ? (v * 100).toFixed(1) + '%' : '-'; }
     function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function csvField(v){ if(v===null||v===undefined)return ''; const s=String(v); return /[",\\r\\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+    function csvField(v){ if(v===null||v===undefined)return ''; const s=typeof v==='object'?JSON.stringify(v):String(v); return /[",\\r\\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
     function toCsv(cols, rows){ const lines=[cols.map(csvField).join(',')]; for(const r of rows) lines.push(r.map(csvField).join(',')); return lines.join('\\r\\n'); }
     function csvName(fn){ const dot=fn.lastIndexOf('.'); return (dot>0?fn.slice(0,dot):fn)+'.csv'; }
 
     window.addEventListener('message', (e) => {
       const m = e.data;
       if (m.type === 'open') {
-        lastCols = []; lastRows = []; setExportEnabled();
+        lastCols = []; lastRows = []; setExportEnabled(); updatePager(0, 0, 0);
         if (m.result.shapeKind === 'object') {
           document.body.classList.add('raw-only');
           setTabs(['raw']);
@@ -708,8 +769,8 @@ export function getExplorerHtml(opts: { fileName: string; cspSource: string; non
         resetChrome('Fields');
         setStatus(fileName + ' - ' + m.result.rowCount + ' rows' + (m.result.sampled ? ' (sampled)' : ''));
         $('sampleNote').textContent = m.result.sampled ? 'Showing a sampled preview of the file.' : '';
-        renderNav(); renderSchema(); send('page', { offset: 0, limit: 200, sortBy: null, sortDir: null });
-      } else if (m.type === 'page') { (mode === 'array' || mode === 'hierarchical') ? renderArrayGrid(m.result) : renderTable(m.result.rows); }
+        renderNav(); renderSchema(); requestPage(0);
+      } else if (m.type === 'page') { (mode === 'array' || mode === 'hierarchical') ? renderArrayGrid(m.result) : renderTable(m.result.rows, m.result); }
       else if (m.type === 'profile') { (mode === 'array' || mode === 'hierarchical') ? renderArrayInspector(m.result) : renderInspector(Object.assign({ column: selected }, m.result)); }
       else if (m.type === 'raw') { $('raw').textContent = JSON.stringify(m.result.json, null, 2); }
       else if (m.type === 'status') { setStatus(m.text); }

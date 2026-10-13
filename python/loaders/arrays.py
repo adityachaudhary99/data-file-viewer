@@ -114,6 +114,7 @@ def array_page(arr, offset: int = 0, limit: int = 200, max_cols: int = 200) -> d
         "columns": [str(c) for c in range(show_cols)],
         "rows": rows,
         "rowCount": nrows,
+        "offset": int(offset),
         "colCount": ncols,
         "colsTruncated": ncols > show_cols,
         "sliced": sliced,

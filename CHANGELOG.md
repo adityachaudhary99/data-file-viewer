@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **v2.0.0** marks the release of the interactive explorer & profiler — sortable tables, array grids, hierarchical trees, per-column/array profiling, CSV export, with the original JSON view preserved as the Raw tab.
 
+## [Unreleased]
+
+### Added
+- Pagination for the Data view (tables, arrays and hierarchical datasets):
+  first/prev/next/last, jump to page, and 100/200/500/1000 rows per page.
+  Previously only the first 200 rows could be viewed. The `#` column shows
+  the row's position in the file, also after sorting.
+
+### Fixed
+- Files with list-typed columns (Arrow `list` / `fixed_size_list`) no longer
+  fail with "Error: disposed"; array cells are shown as JSON and can be
+  sorted and profiled. A result that cannot be serialized now returns an
+  error reply instead of terminating the Python session (#3).
+- Datetime / timedelta (and other non-JSON) cells no longer break the Data
+  view with "Object of type Timestamp is not JSON serializable".
+- The table's horizontal scrollbar stays in view instead of sitting below the
+  last row, and the header row now stays visible while scrolling.
+
 ## [2.0.1] - 2026-09-08
 
 ### Fixed

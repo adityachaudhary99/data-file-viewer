@@ -131,11 +131,13 @@ def main() -> None:
         try:
             req = json.loads(line)
             result = session.handle(req)
-            reply = {"id": req.get("id"), "ok": True, "result": result}
+            # serialize inside the try: an unserializable result must become an
+            # error reply, not kill the process (the client would only see "disposed")
+            out = json.dumps({"id": req.get("id"), "ok": True, "result": result})
         except Exception as exc:  # noqa: BLE001 — report, don't crash the session
             rid = req.get("id") if isinstance(req, dict) else None
-            reply = {"id": rid, "ok": False, "error": str(exc)}
-        sys.stdout.write(json.dumps(reply) + "\n")
+            out = json.dumps({"id": rid, "ok": False, "error": str(exc)})
+        sys.stdout.write(out + "\n")
         sys.stdout.flush()
 
 

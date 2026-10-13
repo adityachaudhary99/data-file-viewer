@@ -49,6 +49,7 @@ def test_array_page_2d_inf_is_null():
     loaded = load_arrays(os.path.join(FX, "arr_2d.npy"))
     res = array_page(loaded.members[0].arr, offset=2, limit=1)
     assert res["rows"][0][0] is None  # +inf at [2,0] -> null
+    assert res["offset"] == 2
 
 
 def test_array_page_1d_is_single_column():
